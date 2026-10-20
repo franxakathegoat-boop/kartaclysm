@@ -1,5 +1,5 @@
 {
- "riivolution_xml": "riivolution/Kartaclysm.xml",
+ "riivolution_xml": "gen/riivolution/Kartaclysm.xml",
  "options": [
   {
    "section": "Kartaclysm",
@@ -140,5 +140,8 @@
    "n": 33,
    "name": "Kartaclysm Cup"
   }
- ]
+ ],
+ "prepare": "build/prepare.ps1",
+ "wiimmfi_region": 0,
+ "min_launcher": "1.5.0"
 }

@@ -20,11 +20,11 @@ public partial class MainForm {
   void SetStatus(string t) { status = t; Invalidate(); }
 
   // ---------------- online status ----------------
-  public class SvcStatus { public string Name, Host, Url, Desc; public int State = 0; public long Ms; public string Detail = "Not checked yet"; public DateTime When; }
+  public class SvcStatus { public string Name, Host, Desc; public int Port; public int State = 0; public long Ms; public string Detail = "Not checked yet"; public DateTime When; }
   readonly List<SvcStatus> services = new() {
-    new SvcStatus { Name = "WIIMMFI", Host = "wiimmfi.de", Url = "https://wiimmfi.de/", Desc = "Custom-track online server (LE-CODE packs)" },
-    new SvcStatus { Name = "RETRO WFC", Host = "rwfc.net", Url = "https://rwfc.net/", Desc = "Retro Rewind's online server" },
-    new SvcStatus { Name = "PACK SERVER", Host = "github.com", Url = ManifestUrl, Desc = "Kartaclysm updates (GitHub Releases)" },
+    new SvcStatus { Name = "WIIMMFI LOGIN", Host = "naswii.wiimmfi.de", Port = 443, Desc = "Wiimmfi sign-in server (nas)" },
+    new SvcStatus { Name = "WIIMMFI ROOMS", Host = "gpcm.gs.wiimmfi.de", Port = 29900, Desc = "Wiimmfi matchmaking (gpcm)" },
+    new SvcStatus { Name = "PACK SERVER", Host = "github.com", Port = 443, Desc = "Kartaclysm updates (GitHub Releases)" },
   };
   bool checking = false;
   async Task CheckOnline() {
@@ -35,40 +35,90 @@ public partial class MainForm {
         var sw = Stopwatch.StartNew();
         try {
           var ips = await Dns.GetHostAddressesAsync(sv.Host);
-          if (ips.Length == 0) throw new Exception("DNS: no address");
+          if (ips.Length == 0) throw new System.Net.Sockets.SocketException();
           using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(8));
-          using var req = new HttpRequestMessage(HttpMethod.Get, sv.Url);
-          using var resp = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token);
-          sv.Ms = sw.ElapsedMilliseconds;
-          int code = (int)resp.StatusCode;
-          if (code < 500) { sv.State = 1; sv.Detail = $"Online · {sv.Ms} ms"; } else { sv.State = 2; sv.Detail = $"Server error {code}"; }
-        } catch (System.Net.Sockets.SocketException) { sv.State = 3; sv.Detail = "DNS lookup failed (blocked or offline?)"; }
-        catch (Exception ex) { sv.State = 3; sv.Detail = ex is TaskCanceledException ? "Timed out" : "Unreachable: " + ex.GetType().Name.Replace("Exception", ""); }
+          using var tcp = new System.Net.Sockets.TcpClient();
+          await tcp.ConnectAsync(ips, sv.Port, cts.Token);
+          sv.Ms = sw.ElapsedMilliseconds; sv.State = 1; sv.Detail = $"Reachable · {sv.Ms} ms";
+        } catch (OperationCanceledException) { sv.State = 3; sv.Detail = "Timed out (port " + sv.Port + " blocked?)"; }
+        catch (System.Net.Sockets.SocketException ex) { sv.State = 3; sv.Detail = ex.SocketErrorCode == System.Net.Sockets.SocketError.HostNotFound ? "DNS lookup failed" : "Connection refused / blocked"; }
+        catch (Exception ex) { sv.State = 3; sv.Detail = "Unreachable: " + ex.GetType().Name.Replace("Exception", ""); }
         sv.When = DateTime.Now; Invalidate();
       }));
     } finally { checking = false; Invalidate(); }
   }
+  int WiimmfiRegion => lastManifest?.wiimmfi_region ?? 0;
+  Manifest lastManifest = LoadCachedManifest();
+  static Manifest LoadCachedManifest() { try { return JsonSerializer.Deserialize<Manifest>(File.ReadAllText(Path.Combine(Settings.DataDir, "manifest.json"))); } catch { return null; } }
+
+  // ---------------- first-run build (runs prepare.ps1 from the pack on this PC) ----------------
+  static string GenDir => Path.Combine(Settings.DataDir, "gen");
+  static string GameImage => Path.Combine(GenDir, "Kartaclysm.wbfs");
+  bool NeedsPrepare(Manifest m) {
+    if (string.IsNullOrEmpty(m.prepare)) return false;
+    try {
+      var st = JsonDocument.Parse(File.ReadAllText(Path.Combine(GenDir, "stamp.json"))).RootElement;
+      return st.GetProperty("pack").GetString() != m.version || st.GetProperty("region").GetInt32() != m.wiimmfi_region
+        || !File.Exists(GameImage) || s.PreparedFor != s.GamePath;
+    } catch { return true; }
+  }
+  async Task Prepare(Manifest m) {
+    SetStatus("First-time setup: building Kartaclysm from your game (a few minutes)...");
+    var psi = new ProcessStartInfo("powershell.exe") { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+    foreach (var a in new[] { "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", Local(m.prepare), "-Game", s.GamePath, "-Root", Settings.DataDir, "-Region", m.wiimmfi_region.ToString() }) psi.ArgumentList.Add(a);
+    var err = new System.Text.StringBuilder();
+    using var p = Process.Start(psi);
+    p.ErrorDataReceived += (_, e) => { if (e.Data != null) lock (err) err.AppendLine(e.Data); };
+    p.BeginErrorReadLine();
+    string line;
+    while ((line = await p.StandardOutput.ReadLineAsync()) != null) {
+      if (line.StartsWith("PROGRESS ")) {
+        var parts = line.Split(' ', 3);
+        if (int.TryParse(parts[1], out var pc)) { progress = pc / 100.0; showBar = true; }
+        SetStatus("Setup: " + (parts.Length > 2 ? parts[2] : ""));
+      }
+    }
+    await p.WaitForExitAsync();
+    if (p.ExitCode != 0 || !File.Exists(GameImage)) {
+      File.WriteAllText(Path.Combine(Settings.DataDir, "prepare-error.log"), err.ToString());
+      throw new Exception("Setup failed. Details: " + Path.Combine(Settings.DataDir, "prepare-error.log") + "\n" + string.Join("\n", err.ToString().Split('\n').Take(6)));
+    }
+    s.PreparedFor = s.GamePath; s.Save();
+  }
+  async Task<Manifest> UpdateAndPrepare() {
+    Manifest m = null;
+    try { SetStatus("Checking for updates..."); m = await UpdatePack(); }
+    catch (Exception ex) { SetStatus("Update failed (offline?): " + ex.Message); }
+    m ??= LoadCachedManifest();
+    if (m == null) throw new Exception("Could not download the pack. Check your internet and try again.");
+    lastManifest = m;
+    if (NeedsPrepare(m)) await Prepare(m);
+    return m;
+  }
 
   // ---------------- pack update / play / export ----------------
   async Task ExportSd() {
-    if (busy) return; busy = true;
+    if (busy) return; busy = true; Invalidate();
     try {
-      try { SetStatus("Checking for updates..."); await UpdatePack(); } catch (Exception ex) { SetStatus("Update failed: " + ex.Message); }
-      if (!Directory.Exists(Settings.PackDir)) { MessageBox.Show(this, "Pack not downloaded yet.", "Kartaclysm"); return; }
-      using var d = new FolderBrowserDialog { Description = "Choose your Wii SD card (the drive root, e.g. E:\\)" };
+      if (string.IsNullOrEmpty(s.GamePath) || !File.Exists(s.GamePath)) { if (!AskGame()) return; }
+      await UpdateAndPrepare();
+      using var d = new FolderBrowserDialog { Description = "Choose the USB drive or SD card your USB loader uses (the drive root, e.g. E:\\)" };
       if (d.ShowDialog(this) != DialogResult.OK) return;
       var root = Path.GetPathRoot(d.SelectedPath);
-      if (MessageBox.Show(this, $"Copy the Kartaclysm pack to {root} ?", "Export to SD", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+      var dest = Path.Combine(root, "wbfs", "Kartaclysm [RMCPKC]", "RMCPKC.wbfs");
+      if (MessageBox.Show(this, $"Copy Kartaclysm (about {new FileInfo(GameImage).Length >> 30} GB) to\n{dest} ?", "Copy to USB / SD", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+      Directory.CreateDirectory(Path.GetDirectoryName(dest));
+      SetStatus("Copying the game file...");
       await Task.Run(() => {
-        foreach (var f in Directory.GetFiles(Settings.PackDir, "*", SearchOption.AllDirectories)) {
-          var dest = Path.Combine(root, Path.GetRelativePath(Settings.PackDir, f));
-          Directory.CreateDirectory(Path.GetDirectoryName(dest)); File.Copy(f, dest, true);
-        }
+        using var src = File.OpenRead(GameImage); using var outp = File.Create(dest + ".part");
+        var buf = new byte[1 << 20]; int n; long done = 0, total = src.Length;
+        while ((n = src.Read(buf, 0, buf.Length)) > 0) { outp.Write(buf, 0, n); done += n; progress = (double)done / total; showBar = true; BeginInvoke((Action)Invalidate); }
       });
-      MessageBox.Show(this, "Done! On the Wii: Homebrew Channel > Riivolution > Kartaclysm: Pack = Enabled > Launch.", "Export to SD");
-      SetStatus("Exported to " + root);
-    } catch (Exception ex) { MessageBox.Show(this, ex.Message, "Error"); }
-    finally { busy = false; Invalidate(); }
+      File.Move(dest + ".part", dest, true);
+      MessageBox.Show(this, "Done! Put the drive in your Wii and start Kartaclysm from your USB loader (USB Loader GX, WiiFlow...).", "Copy to USB / SD");
+      SetStatus("Copied to " + root);
+    } catch (Exception ex) { SetStatus("Copy failed"); MessageBox.Show(this, ex.Message, "Error"); }
+    finally { busy = false; showBar = false; Invalidate(); }
   }
 
   bool AskGame() {
@@ -97,16 +147,9 @@ public partial class MainForm {
     if (busy) return; busy = true; Invalidate();
     try {
       if (!EnsurePaths()) { SetStatus("Setup cancelled"); return; }
-      Manifest m = null;
-      try { SetStatus("Checking for updates..."); m = await UpdatePack(); }
-      catch (Exception ex) { SetStatus("Update failed (offline?): " + ex.Message); }
-      if (m == null) {
-        var cached = Path.Combine(Settings.DataDir, "manifest.json");
-        if (!File.Exists(cached)) { MessageBox.Show(this, "Could not download the pack. Check your internet and try again.", "Kartaclysm"); return; }
-        m = JsonSerializer.Deserialize<Manifest>(File.ReadAllText(cached));
-      }
+      var m = await UpdateAndPrepare();
       Launch(m);
-    } catch (Exception ex) { MessageBox.Show(this, ex.Message, "Error"); }
+    } catch (Exception ex) { SetStatus("Something went wrong"); MessageBox.Show(this, ex.Message, "Kartaclysm"); }
     finally { busy = false; Invalidate(); }
   }
 
@@ -143,17 +186,14 @@ public partial class MainForm {
   static string Local(string rel) => Path.Combine(Settings.PackDir, rel.Replace('/', Path.DirectorySeparatorChar));
 
   void Launch(Manifest m) {
-    var desc = new Dictionary<string, object> {
-      ["type"] = "dolphin-game-mod-descriptor", ["version"] = 1, ["base-file"] = s.GamePath,
-      ["display-name"] = "Kartaclysm",
-      ["riivolution"] = new Dictionary<string, object> { ["patches"] = new[] { new Dictionary<string, object> {
-        ["xml"] = Local(m.riivolution_xml), ["root"] = Settings.PackDir,
-        ["options"] = m.options.Select(o => new Dictionary<string, object> { ["section-name"] = o.section, ["option-name"] = o.option, ["choice"] = o.choice }).ToArray() } } }
-    };
-    var jf = Path.Combine(Settings.DataDir, "Kartaclysm.json");
-    File.WriteAllText(jf, JsonSerializer.Serialize(desc, new JsonSerializerOptions { WriteIndented = true }));
+    // the playable game is the image prepare.ps1 built from the player's own disc (LE-CODE needs a patched main.dol)
+    if (!File.Exists(GameImage)) throw new Exception("The Kartaclysm game file is missing. Press PLAY again to rebuild it.");
     SetStatus($"Launching Dolphin (pack v{m.version})...");
-    Process.Start(new ProcessStartInfo(s.DolphinPath) { ArgumentList = { "-e", jf }, UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(s.DolphinPath) });
+    var psi = new ProcessStartInfo(s.DolphinPath) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(s.DolphinPath) };
+    // smoother play on weaker PCs: compile shaders in the background and pre-build them before the game starts
+    foreach (var a in new[] { "-C", "GFX.Settings.ShaderCompilationMode=2", "-C", "GFX.Settings.WaitForShadersBeforeStarting=True", "-e", GameImage }) psi.ArgumentList.Add(a);
+    Process.Start(psi);
+    showBar = false;
   }
 }
 }

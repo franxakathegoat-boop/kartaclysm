@@ -20,6 +20,7 @@ public class Settings {
   public string PackVersion { get; set; }
   public string Mode { get; set; } = "dolphin";   // "dolphin" or "sd"
   public bool Intro { get; set; } = true;
+  public string PreparedFor { get; set; }
   static string Dir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Kartaclysm");
   public static string PackDir => Path.Combine(Dir, "pack");
   public static string DataDir => Dir;
@@ -35,6 +36,9 @@ public class Manifest {
   public List<ManifestFile> files { get; set; } = new();
   public string riivolution_xml { get; set; }
   public List<RiiOption> options { get; set; } = new();
+  public string prepare { get; set; }
+  public int wiimmfi_region { get; set; }
+  public string min_launcher { get; set; }
 }
 public class RiiOption { public string section { get; set; } public string option { get; set; } public int choice { get; set; } }
 

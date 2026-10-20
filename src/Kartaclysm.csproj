@@ -12,7 +12,7 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
-    <Version>1.4.1</Version>
+    <Version>1.5.0</Version>
   </PropertyGroup>
   <ItemGroup><EmbeddedResource Include="Assets\data.json" LogicalName="data.json" /><EmbeddedResource Include="Assets\logo_side.png" LogicalName="logo_side.png" /><EmbeddedResource Include="Assets\logo_full.png" LogicalName="logo_full.png" /><EmbeddedResource Include="Assets\wordmark.png" LogicalName="wordmark.png" /><EmbeddedResource Include="Assets\symbol.png" LogicalName="symbol.png" /><EmbeddedResource Include="Assets\ChakraPetch-Bold.ttf" LogicalName="bold.ttf" /><EmbeddedResource Include="Assets\ChakraPetch-SemiBold.ttf" LogicalName="semi.ttf" /><EmbeddedResource Include="Assets\ChakraPetch-Medium.ttf" LogicalName="med.ttf" /><EmbeddedResource Include="Assets\shots\shot0.jpg" LogicalName="shots/shot0.jpg" /><EmbeddedResource Include="Assets\shots\shot1.jpg" LogicalName="shots/shot1.jpg" /><EmbeddedResource Include="Assets\shots\shot2.jpg" LogicalName="shots/shot2.jpg" /><EmbeddedResource Include="Assets\shots\shot3.jpg" LogicalName="shots/shot3.jpg" /><EmbeddedResource Include="Assets\shots\shot4.jpg" LogicalName="shots/shot4.jpg" /><EmbeddedResource Include="Assets\shots\shot5.jpg" LogicalName="shots/shot5.jpg" /></ItemGroup>
 </Project>

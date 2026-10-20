@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace Kartaclysm {
 public partial class MainForm : Form {
-  public const string LauncherVersion = "1.4.1";
+  public const string LauncherVersion = "1.5.0";
   public const int W = 1200, H = 720, SIDE = 236;
   // theme
   static readonly Color Cyan = Color.FromArgb(0, 229, 255), Blue = Color.FromArgb(60, 110, 255), Magenta = Color.FromArgb(255, 46, 147);
@@ -37,6 +37,8 @@ public partial class MainForm : Form {
   float Now => fixedTime ?? (float)clock.Elapsed.TotalSeconds;
   readonly System.Windows.Forms.Timer anim = new() { Interval = 16 };
   bool intro;
+  float ui = 1f;   // uniform UI scale for small screens
+  Point Unscale(Point p) => ui == 1f ? p : new Point((int)(p.X / ui), (int)(p.Y / ui));
   float introStart = 0;
 
   // slideshow
@@ -52,7 +54,12 @@ public partial class MainForm : Form {
   public MainForm(bool offscreen = false) {
     Text = "Kartaclysm";
     try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
-    ClientSize = new Size(W, H);
+    // fit small / high-DPI-scaled screens (e.g. 1536x864 at 125%): shrink the whole UI uniformly
+    try {
+      var wa = Screen.FromPoint(Cursor.Position).WorkingArea;
+      ui = Math.Min(1f, Math.Min((wa.Width - 24f) / W, (wa.Height - 48f) / H));
+    } catch { ui = 1f; }
+    ClientSize = new Size((int)Math.Round(W * ui), (int)Math.Round(H * ui));
     FormBorderStyle = FormBorderStyle.FixedSingle; MaximizeBox = false;
     StartPosition = FormStartPosition.CenterScreen; BackColor = Color.Black;
     SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
@@ -83,10 +90,10 @@ public partial class MainForm : Form {
     if (offscreen) return;
     anim.Tick += (_, _) => Tick();
     anim.Start();
-    MouseMove += (_, e) => { mouse = e.Location; Cursor = HitAt(mouse) != null ? Cursors.Hand : Cursors.Default; };
+    MouseMove += (_, e) => { mouse = Unscale(e.Location); Cursor = HitAt(mouse) != null ? Cursors.Hand : Cursors.Default; };
     MouseLeave += (_, _) => { mouse = new Point(-1, -1); };
-    MouseDown += (_, e) => { if (intro) { intro = false; return; } downId = HitAt(e.Location)?.Id; };
-    MouseUp += (_, e) => { var h = HitAt(e.Location); if (h != null && h.Id == downId) h.Click?.Invoke(); downId = null; };
+    MouseDown += (_, e) => { if (intro) { intro = false; return; } downId = HitAt(Unscale(e.Location))?.Id; };
+    MouseUp += (_, e) => { var h = HitAt(Unscale(e.Location)); if (h != null && h.Id == downId) h.Click?.Invoke(); downId = null; };
     MouseWheel += (_, e) => { if (page == Page.Tracks) tracksScrollTarget = Math.Max(0, Math.Min(TracksMaxScroll(), tracksScrollTarget - e.Delta * 0.6f)); };
     KeyPreview = true; KeyDown += (_, _) => intro = false;
     Shown += async (_, _) => await CheckOnline();
@@ -362,6 +369,7 @@ public partial class MainForm : Form {
   Bitmap pageLayer;
   void RenderFrame(Graphics g) {
     Quality(g);
+    if (ui != 1f) { g.ScaleTransform(ui, ui); g.InterpolationMode = InterpolationMode.HighQualityBilinear; }
     float t = Now;
     if (intro) { DrawIntro(g, t - introStart); return; }
     DrawMain(g, t, 1f);
@@ -387,7 +395,7 @@ public partial class MainForm : Form {
     Directory.CreateDirectory(outDir);
     var f = new MainForm(true);
     f.s = new Settings { PackVersion = "0.2.0", GamePath = @"D:\Games\Mario Kart Wii (PAL).rvz", DolphinPath = @"C:\Program Files\Dolphin\Dolphin.exe" };
-    foreach (var sv in f.services) { sv.State = 1; sv.Ms = sv.Name == "WIIMMFI" ? 48 : sv.Name == "RETRO WFC" ? 61 : 33; sv.Detail = $"Online · {sv.Ms} ms"; sv.When = DateTime.Now; }
+    foreach (var sv in f.services) { sv.State = 1; sv.Ms = sv.Name.StartsWith("WIIMMFI L") ? 48 : sv.Name.StartsWith("WIIMMFI R") ? 52 : 33; sv.Detail = $"Reachable · {sv.Ms} ms"; sv.When = DateTime.Now; }
     void Save(string name) {
       using var bmp = new Bitmap(W, H, PixelFormat.Format32bppArgb);
       using (var g = Graphics.FromImage(bmp)) f.RenderFrame(g);

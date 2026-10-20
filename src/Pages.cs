@@ -43,7 +43,7 @@ public partial class MainForm {
     float cx = X0;
     Chip(g, cx, y, "132 TRACKS", Cyan, out var w1); cx += w1 + 10;
     Chip(g, cx, y, "33 CUPS", Magenta, out var w2); cx += w2 + 10;
-    Chip(g, cx, y, s.Mode == "sd" ? "REAL WII · SD" : "DOLPHIN", Ok, out _);
+    Chip(g, cx, y, s.Mode == "sd" ? "REAL WII · USB" : "DOLPHIN", Ok, out _);
     y += 58;
     bool sd = s.Mode == "sd";
     PrimaryButton(g, new RectangleF(X0, y, 280, 70), "play", busy ? "WORKING" : sd ? "EXPORT" : "PLAY", sd ? "sd" : "play", () => _ = OnPlay(), !busy);
@@ -176,6 +176,8 @@ public partial class MainForm {
 
   // ======================= UPDATES =======================
   static readonly (string ver, string date, string kind, string[] items)[] Changelog = {
+    ("PACK 1.0.0", "OCT 20, 2026", "PACK", new[] { "The real Kartaclysm pack: 132 custom tracks in 33 named cups + the 8 original cups (LE-CODE)", "First PLAY builds the game files from YOUR copy on your PC (a few minutes, only once)", "Wiimmfi-ready: own Kartaclysm region as soon as Wiimm assigns it" }),
+    ("LAUNCHER 1.5.0", "OCT 20, 2026", "UPDATE", new[] { "Fits smaller screens (e.g. laptops at 125% scaling)", "Smoother Dolphin: background shader compiling", "Online page checks the real Wiimmfi game servers", "PLAY builds and starts your own Kartaclysm game file (RMCPKC, your normal save is untouched)", "Real Wii: copies the game file to USB/SD for a USB loader" }),
     ("LAUNCHER 1.4.1", "OCT 20, 2026", "UPDATE", new[] { "All 33 cups now have names" }),
     ("LAUNCHER 1.4.0", "OCT 20, 2026", "MAJOR", new[] { "All-new interface: sidebar, Home, Tracks, Updates, Online and Settings pages", "Track browser with all 33 cups and every track author credited", "Online page: live server status and tips for players in Italy", "Cinematic intro (skip with a click, turn off in Settings)", "Play mode: Dolphin on PC or real Wii via SD card", "Fixed: 1.3.0 could crash at startup" }),
     ("PACK 0.2.0", "OCT 20, 2026", "PACK", new[] { "Pack renamed to Kartaclysm (Riivolution XML + folder)", "Placeholder content while the 132-track pack is being built" }),
@@ -209,7 +211,7 @@ public partial class MainForm {
 
   // ======================= ONLINE =======================
   void DrawOnline(Graphics g) {
-    Header(g, "NETWORK", "ONLINE", "Live status of the servers Kartaclysm talks to.");
+    Header(g, "NETWORK", "ONLINE", "Live check of the Wiimmfi game servers from your PC.");
     GhostButton(g, new RectangleF(XR - 150, 70, 150, 40), "recheck", checking ? "CHECKING" : "RE-CHECK", "refresh", () => _ = CheckOnline(), 13);
     float cw = (XR - X0 - 2 * 18) / 3, y = 172;
     for (int i = 0; i < services.Count; i++) {
@@ -227,15 +229,14 @@ public partial class MainForm {
     y += 150;
     var ir = new RectangleF(X0, y, (XR - X0) * 0.62f, H - y - 36);
     Glass(g, ir, 14, 150);
-    Txt(g, "🇮🇹", F(fMed, 16), TextC, ir.X + 22, ir.Y + 20);
     Spaced(g, "PLAYING FROM ITALY?", F(fBold, 16), TextC, ir.X + 22, ir.Y + 20, 2);
     Txt(g, "If online won't connect, try these in order:", F(fMed, 14), Muted, ir.X + 22, ir.Y + 48);
     string[] tips = {
       "Turn off any VPN, proxy or iCloud Private Relay — the servers block them.",
       "Stuck on “Connecting…”? Set your DNS to Cloudflare 1.1.1.1 or Google 8.8.8.8.",
-      "Don't use a Wiimmfi-patched game file, and disable RetroAchievements in Dolphin.",
+      "Use a clean game file (Kartaclysm patches it for Wiimmfi itself) and turn off RetroAchievements in Dolphin.",
       "Real Wii: use 2.4 GHz Wi-Fi with WPA2 (AES), channel 11 or lower.",
-      "Still blocked? Ask the server team on Discord — they can whitelist your IP.",
+      "Still blocked? Ask on the Wiimmfi Discord / forum — the team can check your connection.",
     };
     float ty = ir.Y + 80;
     for (int i = 0; i < tips.Length; i++) {
@@ -248,11 +249,13 @@ public partial class MainForm {
     }
     var nr2 = new RectangleF(ir.Right + 18, y, XR - ir.Right - 18, ir.Height);
     Glass(g, nr2, 14, 150);
-    Spaced(g, "KARTACLYSM ONLINE", F(fBold, 14), TextC, nr2.X + 22, nr2.Y + 20, 2);
-    float yy = nr2.Y + 50;
-    foreach (var l in Wrap(g, "The pack will race on Wiimmfi once it is registered with the Wiimmfi team. Until then, play offline time trials and grand prix.", F(fMed, 14), nr2.Width - 44)) { Txt(g, l, F(fMed, 14), Muted, nr2.X + 22, yy); yy += 21; }
+    Spaced(g, "KARTACLYSM ROOMS", F(fBold, 14), TextC, nr2.X + 22, nr2.Y + 20, 2);
+    float yy = nr2.Y + 50; bool reg = WiimmfiRegion > 0;
+    var txt = reg ? $"Kartaclysm races on Wiimmfi in its own region ({WiimmfiRegion}): you only meet other Kartaclysm players, on the same 132 tracks."
+                  : "Kartaclysm will race on Wiimmfi in its own private region, so you only meet other Kartaclysm players. Online opens as soon as Wiimm assigns the region; until then play Grand Prix, VS and Time Trials offline.";
+    foreach (var l in Wrap(g, txt, F(fMed, 14), nr2.Width - 44)) { Txt(g, l, F(fMed, 14), Muted, nr2.X + 22, yy); yy += 21; }
     yy += 14;
-    Chip(g, nr2.X + 22, yy, "REGISTRATION PENDING", Warn, out _);
+    Chip(g, nr2.X + 22, yy, reg ? $"REGION {WiimmfiRegion} · ONLINE" : "REGION PENDING", reg ? Ok : Warn, out _);
   }
 
   // ======================= SETTINGS =======================
@@ -279,7 +282,7 @@ public partial class MainForm {
     Spaced(g, "PLAY MODE", F(fBold, 13), Cyan, r2.X + 24, r2.Y + 20, 2.6f);
     var seg = new RectangleF(r2.X + 24, r2.Y + 52, r2.Width - 48, 46);
     using (var gp = Round(seg, 12)) { using var b = new SolidBrush(Color.FromArgb(110, 0, 0, 0)); g.FillPath(b, gp); }
-    string[] modes = { "dolphin", "sd" }; string[] ml = { "DOLPHIN · PC", "REAL WII · SD" }; string[] mi = { "play", "sd" };
+    string[] modes = { "dolphin", "sd" }; string[] ml = { "DOLPHIN · PC", "REAL WII · USB" }; string[] mi = { "play", "sd" };
     for (int i = 0; i < 2; i++) {
       var sr = new RectangleF(seg.X + 4 + i * (seg.Width - 8) / 2, seg.Y + 4, (seg.Width - 8) / 2, seg.Height - 8); string id = "mode" + i; int ii = i;
       bool act = s.Mode == modes[i], hv = Hover(id);
@@ -291,7 +294,7 @@ public partial class MainForm {
       Spaced(g, ml[i], f, tc, sr.X + (sr.Width - lw - 26) / 2 + 26, sr.Y + 11, 1.6f);
       AddHit(sr, id, () => { s.Mode = modes[ii]; s.Save(); });
     }
-    var desc = s.Mode == "sd" ? "PLAY copies the latest pack to your Wii's SD card. On the Wii: Homebrew Channel → Riivolution → Kartaclysm." : "PLAY updates the pack and starts Dolphin with Kartaclysm enabled.";
+    var desc = s.Mode == "sd" ? "PLAY builds Kartaclysm and copies the game file to your USB drive / SD card for a USB loader (USB Loader GX, WiiFlow)." : "PLAY updates the pack, builds Kartaclysm from your game the first time (a few minutes), then starts it in Dolphin.";
     float dy = seg.Bottom + 16; foreach (var l in Wrap(g, desc, F(fMed, 13), r2.Width - 48)) { Txt(g, l, F(fMed, 13), Muted, r2.X + 24, dy); dy += 19; }
     // --- launcher ---
     var r3 = new RectangleF(r2.Right + 18, y, XR - r2.Right - 18, 190); Glass(g, r3, 14, 150);
