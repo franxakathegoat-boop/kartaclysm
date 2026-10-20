@@ -1,1 +1,144 @@
-{"riivolution_xml":"riivolution/Kartaclysm.xml","options":[{"section":"Kartaclysm","option":"Pack","choice":1}]}
+{
+ "riivolution_xml": "riivolution/Kartaclysm.xml",
+ "options": [
+  {
+   "section": "Kartaclysm",
+   "option": "Pack",
+   "choice": 1
+  }
+ ],
+ "cups": [
+  {
+   "n": 1,
+   "name": "Shockwave Cup"
+  },
+  {
+   "n": 2,
+   "name": "Riptide Cup"
+  },
+  {
+   "n": 3,
+   "name": "Inferno Cup"
+  },
+  {
+   "n": 4,
+   "name": "Avalanche Cup"
+  },
+  {
+   "n": 5,
+   "name": "Rift Cup"
+  },
+  {
+   "n": 6,
+   "name": "Monsoon Cup"
+  },
+  {
+   "n": 7,
+   "name": "Mirage Cup"
+  },
+  {
+   "n": 8,
+   "name": "Tremor Cup"
+  },
+  {
+   "n": 9,
+   "name": "Undertow Cup"
+  },
+  {
+   "n": 10,
+   "name": "Sandstorm Cup"
+  },
+  {
+   "n": 11,
+   "name": "Wildfire Cup"
+  },
+  {
+   "n": 12,
+   "name": "Blizzard Cup"
+  },
+  {
+   "n": 13,
+   "name": "Tempest Cup"
+  },
+  {
+   "n": 14,
+   "name": "Maelstrom Cup"
+  },
+  {
+   "n": 15,
+   "name": "Eclipse Cup"
+  },
+  {
+   "n": 16,
+   "name": "Cyclone Cup"
+  },
+  {
+   "n": 17,
+   "name": "Aftershock Cup"
+  },
+  {
+   "n": 18,
+   "name": "Downpour Cup"
+  },
+  {
+   "n": 19,
+   "name": "Meteor Cup"
+  },
+  {
+   "n": 20,
+   "name": "Supernova Cup"
+  },
+  {
+   "n": 21,
+   "name": "Typhoon Cup"
+  },
+  {
+   "n": 22,
+   "name": "Faultline Cup"
+  },
+  {
+   "n": 23,
+   "name": "Tsunami Cup"
+  },
+  {
+   "n": 24,
+   "name": "Landslide Cup"
+  },
+  {
+   "n": 25,
+   "name": "Firestorm Cup"
+  },
+  {
+   "n": 26,
+   "name": "Whiteout Cup"
+  },
+  {
+   "n": 27,
+   "name": "Overload Cup"
+  },
+  {
+   "n": 28,
+   "name": "Singularity Cup"
+  },
+  {
+   "n": 29,
+   "name": "Nebula Cup"
+  },
+  {
+   "n": 30,
+   "name": "Hailstorm Cup"
+  },
+  {
+   "n": 31,
+   "name": "Thunderhead Cup"
+  },
+  {
+   "n": 32,
+   "name": "Glitch Cup"
+  },
+  {
+   "n": 33,
+   "name": "Kartaclysm Cup"
+  }
+ ]
+}

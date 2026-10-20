@@ -40,6 +40,6 @@ public class RiiOption { public string section { get; set; } public string optio
 
 public class ShotInfo { public string file { get; set; } public string track { get; set; } public string author { get; set; } public string source { get; set; } public string uploader { get; set; } public string page { get; set; } }
 public class TrackInfo { public string name { get; set; } public string authors { get; set; } public int? shot { get; set; } }
-public class CupInfo { public int n { get; set; } public string series { get; set; } public List<TrackInfo> tracks { get; set; } }
+public class CupInfo { public int n { get; set; } public string name { get; set; } public string series { get; set; } public List<TrackInfo> tracks { get; set; } }
 public class AppData { public List<ShotInfo> shots { get; set; } public List<CupInfo> cups { get; set; } }
 }

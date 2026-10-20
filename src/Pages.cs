@@ -145,11 +145,11 @@ public partial class MainForm {
         using (var lg = new LinearGradientBrush(new RectangleF(ban.X, ban.Y - 1, ban.Width, ban.Height + 2), Color.FromArgb(10, 8, 12, 22), Color.FromArgb(200, 8, 12, 22), 90f)) g.FillRectangle(lg, ban);
         g.Restore(s2);
       }
-      Txt(g, $"{c.n:00}", F(fBold, 44), Color.FromArgb(70, 255, 255, 255), x + cw - 62, y + 10);
-            Txt(g, $"CUP {c.n:00}", F(fBold, 22), TextC, x + 16, y + 30);
+      Txt(g, $"{c.n:00}", F(fBold, 26), Color.FromArgb(80, 255, 255, 255), x + cw - 44, y + 10);
+            Txt(g, (c.name ?? $"CUP {c.n:00}").ToUpperInvariant(), F(fBold, 22), TextC, x + 16, y + 36);
       // series chip
       var sf = F(fBold, 10); float sw2 = Spaced(g, c.series.ToUpperInvariant(), sf, TextC, 0, 0, 1.4f, false);
-      var chip = new RectangleF(x + 16 + Measure(g, $"CUP {c.n:00}", F(fBold, 22)).Width + 10, y + 36, sw2 + 16, 18);
+      var chip = new RectangleF(x + 16, y + 12, sw2 + 16, 18);
       using (var gp = Round(chip, 9)) { using var b = new SolidBrush(A(sc, 60)); g.FillPath(b, gp); using var pen = new Pen(A(sc, 200)); g.DrawPath(pen, gp); }
       Spaced(g, c.series.ToUpperInvariant(), sf, TextC, chip.X + 8, chip.Y + 3, 1.4f);
       float ty = y + 86;
@@ -176,6 +176,7 @@ public partial class MainForm {
 
   // ======================= UPDATES =======================
   static readonly (string ver, string date, string kind, string[] items)[] Changelog = {
+    ("LAUNCHER 1.4.1", "OCT 20, 2026", "UPDATE", new[] { "All 33 cups now have names" }),
     ("LAUNCHER 1.4.0", "OCT 20, 2026", "MAJOR", new[] { "All-new interface: sidebar, Home, Tracks, Updates, Online and Settings pages", "Track browser with all 33 cups and every track author credited", "Online page: live server status and tips for players in Italy", "Cinematic intro (skip with a click, turn off in Settings)", "Play mode: Dolphin on PC or real Wii via SD card", "Fixed: 1.3.0 could crash at startup" }),
     ("PACK 0.2.0", "OCT 20, 2026", "PACK", new[] { "Pack renamed to Kartaclysm (Riivolution XML + folder)", "Placeholder content while the 132-track pack is being built" }),
     ("LAUNCHER 1.1 – 1.3", "OCT 20, 2026", "UPDATE", new[] { "Auto-update: only changed files are downloaded", "Export to SD card for real Wii consoles" }),
