@@ -61,5 +61,5 @@ s=Image.new('RGBA',(832,140),(0,0,0,255))
 lw=760; lh=int(logo.height*lw/logo.width); l=logo.resize((lw,lh),Image.LANCZOS)
 s.alpha_composite(l,((832-lw)//2,(140-lh)//2)); s.convert('RGB').save('title_logo.png')
 s.convert('RGB').filter(ImageFilter.GaussianBlur(4)).save('title_logo_blur.png')
-Image.new('RGB',(832,140),(0,0,0)).save('title_tm.png')
+# the sharp title layout uses tt_title_screen_title_rogo_tm_only, so prepare.ps1 maps it to title_logo
 p=Image.new('RGB',(832,316+140)); p.paste(img,(0,140)); p.paste(s.convert('RGB'),(0,0)); p.save('preview.png')

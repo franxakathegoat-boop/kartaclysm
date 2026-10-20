@@ -103,7 +103,11 @@ Push-Location "$pack\build"
 try { Run wszst.exe @('patch', "$x\files\Scene\UI\*.szs", '--le-menu', '--cup-icons', 'cup-icons.png', '--links', '--patch-bmg', 'LE-COPY?T11', '--patch-bmg', 'OVERWRITE?T11=tracks.bmg.txt', '-D', "$gen\Scene\UI\", '-o', '-q') | Out-Null } finally { Pop-Location }
 
 # 5b. Kartaclysm title screen (our own art, pack/build/title) in every Title*.szs that has the title textures
-$tmap = @{ 'tt_title_screen_mario0' = 'title_bg'; 'tt_title_screen_mario0_bokeboke' = 'title_bg_blur'; 'tt_title_screen_title_rogo' = 'title_logo'; 'tt_title_screen_title_rogo_bokeboke' = 'title_logo_blur'; 'tt_title_screen_title_rogo_tm_only' = 'title_tm' }
+$tmap = @{ 'tt_title_screen_mario0' = 'title_bg'; 'tt_title_screen_mario0_bokeboke' = 'title_bg_blur'; 'tt_title_screen_title_rogo' = 'title_logo'; 'tt_title_screen_title_rogo_bokeboke' = 'title_logo_blur'; 'tt_title_screen_title_rogo_tm_only' = 'title_logo'
+  # the menu backdrop picks one of these at random: all show the Kartaclysm picture
+  'tt_title_screen_mario' = 'title_bg'; 'tt_title_screen_mario_bokeboke' = 'title_bg_blur'; 'tt_title_screen_mario2' = 'title_bg'; 'tt_title_screen_mario2_bokeboke' = 'title_bg_blur'
+  'tt_title_screen_luigi' = 'title_bg'; 'tt_title_screen_luigi_bokeboke' = 'title_bg_blur'; 'tt_title_screen_peachi' = 'title_bg'; 'tt_title_screen_peachi_bokeboke' = 'title_bg_blur'
+  'tt_title_screen_koopa' = 'title_bg'; 'tt_title_screen_koopa_bokeboke' = 'title_bg_blur' }
 foreach ($orig in Get-ChildItem "$x\files\Scene\UI" -Filter 'Title*.szs') {
   if (-not (Test-Path "$gen\Scene\UI\$($orig.Name)")) { Copy-Item $orig.FullName "$gen\Scene\UI\" }
   $ts = Get-Item "$gen\Scene\UI\$($orig.Name)"
