@@ -176,6 +176,7 @@ public partial class MainForm {
 
   // ======================= UPDATES =======================
   static readonly (string ver, string date, string kind, string[] items)[] Changelog = {
+    ("LAUNCHER 1.7.0", "OCT 20, 2026", "MAJOR", new[] { "NATIVE PC mode is fully automatic: PLAY downloads WiiCompiled, builds Kartaclysm from your own game and starts it", "Progress bar during the native build, errors saved to native-error.log", "Native mode uses its own portable settings, so a Retro Rewind WiiCompiled install isn't touched" }),
     ("LAUNCHER 1.6.0 + PACK 1.1.0", "OCT 20, 2026", "MAJOR", new[] { "Fixed: PLAY could start plain Mario Kart Wii (old launchers used a Riivolution shortcut that can't run LE-CODE)", "PLAY now always builds/verifies your Kartaclysm game file first, with progress, and shows any error", "Launcher updates itself automatically", "New NATIVE PC play mode for your WiiCompiled Kartaclysm build", "New cup icons with a symbol for every disaster", "New 34th cup (Eruption) - fixes the empty slot/background on the last cup page" }),
     ("PACK 1.0.0", "OCT 20, 2026", "PACK", new[] { "The real Kartaclysm pack: 132 custom tracks in 33 named cups + the 8 original cups (LE-CODE)", "First PLAY builds the game files from YOUR copy on your PC (a few minutes, only once)", "Wiimmfi-ready: own Kartaclysm region as soon as Wiimm assigns it" }),
     ("LAUNCHER 1.5.0", "OCT 20, 2026", "UPDATE", new[] { "Fits smaller screens (e.g. laptops at 125% scaling)", "Smoother Dolphin: background shader compiling", "Online page checks the real Wiimmfi game servers", "PLAY builds and starts your own Kartaclysm game file (RMCPKC, your normal save is untouched)", "Real Wii: copies the game file to USB/SD for a USB loader" }),
@@ -295,7 +296,7 @@ public partial class MainForm {
       Spaced(g, ml[i], f, tc, sr.X + (sr.Width - lw - 26) / 2 + 26, sr.Y + 11, 1.6f);
       AddHit(sr, id, () => { s.Mode = modes[ii]; s.Save(); });
     }
-    var desc = s.Mode == "native" ? "PLAY updates the pack and starts Kartaclysm natively with WiiCompiled (no emulator). Needs your local WiiCompiled Kartaclysm build; PLAY asks for its .exe once." : s.Mode == "sd" ? "PLAY builds Kartaclysm and copies the game file to your USB drive / SD card for a USB loader (USB Loader GX, WiiFlow)." : "PLAY updates the pack, builds Kartaclysm from your game the first time (a few minutes), then starts it in Dolphin.";
+    var desc = s.Mode == "native" ? "PLAY builds Kartaclysm natively for your PC with WiiCompiled (no emulator) from your own game, then starts it. First time: ~1 hour and ~20 GB free space." : s.Mode == "sd" ? "PLAY builds Kartaclysm and copies the game file to your USB drive / SD card for a USB loader (USB Loader GX, WiiFlow)." : "PLAY updates the pack, builds Kartaclysm from your game the first time (a few minutes), then starts it in Dolphin.";
     float dy = seg.Bottom + 16; foreach (var l in Wrap(g, desc, F(fMed, 13), r2.Width - 48)) { Txt(g, l, F(fMed, 13), Muted, r2.X + 24, dy); dy += 19; }
     // --- launcher ---
     var r3 = new RectangleF(r2.Right + 18, y, XR - r2.Right - 18, 190); Glass(g, r3, 14, 150);

@@ -64,14 +64,21 @@ public partial class MainForm {
   }
   async Task Prepare(Manifest m) {
     SetStatus("First-time setup: building Kartaclysm from your game (a few minutes)...");
+    await RunScript(Local(m.prepare), new[] { "-Game", s.GamePath, "-Root", Settings.DataDir, "-Region", m.wiimmfi_region.ToString() }, "prepare-error.log");
+    if (!File.Exists(GameImage)) throw new Exception("Setup finished but the Kartaclysm game file is missing.");
+    s.PreparedFor = s.GamePath; s.Save();
+  }
+  // runs a pack script; "PROGRESS <pct> <text>" lines drive the bar, everything is logged, errors are shown
+  async Task<List<string>> RunScript(string script, string[] args, string errLog) {
     var psi = new ProcessStartInfo("powershell.exe") { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
-    foreach (var a in new[] { "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", Local(m.prepare), "-Game", s.GamePath, "-Root", Settings.DataDir, "-Region", m.wiimmfi_region.ToString() }) psi.ArgumentList.Add(a);
-    var err = new System.Text.StringBuilder();
+    foreach (var a in new[] { "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script }.Concat(args)) psi.ArgumentList.Add(a);
+    var err = new System.Text.StringBuilder(); var outl = new List<string>();
     using var p = Process.Start(psi);
     p.ErrorDataReceived += (_, e) => { if (e.Data != null) lock (err) err.AppendLine(e.Data); };
     p.BeginErrorReadLine();
     string line;
     while ((line = await p.StandardOutput.ReadLineAsync()) != null) {
+      outl.Add(line);
       if (line.StartsWith("PROGRESS ")) {
         var parts = line.Split(' ', 3);
         if (int.TryParse(parts[1], out var pc)) { progress = pc / 100.0; showBar = true; }
@@ -79,11 +86,12 @@ public partial class MainForm {
       }
     }
     await p.WaitForExitAsync();
-    if (p.ExitCode != 0 || !File.Exists(GameImage)) {
-      File.WriteAllText(Path.Combine(Settings.DataDir, "prepare-error.log"), err.ToString());
-      throw new Exception("Setup failed. Details: " + Path.Combine(Settings.DataDir, "prepare-error.log") + "\n" + string.Join("\n", err.ToString().Split('\n').Take(6)));
+    if (p.ExitCode != 0) {
+      var path = Path.Combine(Settings.DataDir, errLog);
+      File.WriteAllText(path, string.Join("\n", outl) + "\n--- errors ---\n" + err);
+      throw new Exception("Setup failed. Details: " + path + "\n" + string.Join("\n", err.ToString().Split('\n').Take(8)));
     }
-    s.PreparedFor = s.GamePath; s.Save();
+    return outl;
   }
   async Task<Manifest> UpdateAndPrepare() {
     Manifest m = null;
@@ -158,18 +166,19 @@ public partial class MainForm {
   async Task PlayNative() {
     if (busy) return; busy = true; Invalidate();
     try {
-      Manifest m = null;
-      try { SetStatus("Checking for updates..."); m = await UpdatePack(); } catch (Exception ex) { SetStatus("Update failed (offline?): " + ex.Message); }
-      if (string.IsNullOrEmpty(s.WiiCompiledPath) || !File.Exists(s.WiiCompiledPath)) {
-        MessageBox.Show(this, "Select the Kartaclysm.exe from your WiiCompiled Kartaclysm build (LocalBuild.ps1 -Profile kartaclysm output folder).\n\nNo build yet? Switch Settings > Play mode to DOLPHIN for now.", "Native mode");
-        using var d = new OpenFileDialog { Filter = "WiiCompiled Kartaclysm|*.exe" };
-        if (d.ShowDialog(this) != DialogResult.OK) { SetStatus("Native mode: no WiiCompiled build selected"); return; }
-        s.WiiCompiledPath = d.FileName; s.Save();
-      }
-      SetStatus("Launching Kartaclysm natively (WiiCompiled)...");
-      Process.Start(new ProcessStartInfo(s.WiiCompiledPath) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(s.WiiCompiledPath) });
+      if (string.IsNullOrEmpty(s.GamePath) || !File.Exists(s.GamePath)) { if (!AskGame()) { SetStatus("Setup cancelled"); return; } }
+      var m = await UpdateAndPrepare();
+      var native = Local("build/native-setup.ps1");
+      if (!File.Exists(native)) throw new Exception("This pack version has no native mode yet. Press PLAY again after the next update.");
+      SetStatus("Native setup: preparing WiiCompiled (first time takes about an hour)...");
+      var outl = await RunScript(native, new[] { "-Game", s.GamePath, "-Root", Settings.DataDir }, "native-error.log");
+      var exe = outl.LastOrDefault(l => l.StartsWith("EXE "))?.Substring(4).Trim();
+      if (exe == null || !File.Exists(exe)) throw new Exception("Native build finished but the game exe was not found.");
+      s.WiiCompiledPath = exe; s.Save();
+      SetStatus($"Launching Kartaclysm natively (pack v{m.version})...");
+      Process.Start(new ProcessStartInfo(exe) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(exe) });
       showBar = false;
-    } catch (Exception ex) { SetStatus("Native launch failed"); MessageBox.Show(this, ex.Message, "Kartaclysm"); }
+    } catch (Exception ex) { SetStatus("Native setup failed - see the message"); showBar = false; MessageBox.Show(this, ex.Message, "Kartaclysm"); }
     finally { busy = false; Invalidate(); }
   }
 
