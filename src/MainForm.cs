@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace Kartaclysm {
 public partial class MainForm : Form {
-  public const string LauncherVersion = "1.7.0";
+  public const string LauncherVersion = "1.8.0";
   public const int W = 1200, H = 720, SIDE = 236;
   // theme
   static readonly Color Cyan = Color.FromArgb(0, 229, 255), Blue = Color.FromArgb(60, 110, 255), Magenta = Color.FromArgb(255, 46, 147);
@@ -96,7 +96,7 @@ public partial class MainForm : Form {
     MouseUp += (_, e) => { var h = HitAt(Unscale(e.Location)); if (h != null && h.Id == downId) h.Click?.Invoke(); downId = null; };
     MouseWheel += (_, e) => { if (page == Page.Tracks) tracksScrollTarget = Math.Max(0, Math.Min(TracksMaxScroll(), tracksScrollTarget - e.Delta * 0.6f)); };
     KeyPreview = true; KeyDown += (_, _) => intro = false;
-    Shown += async (_, _) => { await SelfUpdate(); await CheckOnline(); };
+    Shown += async (_, _) => { UpdateMusic(); await SelfUpdate(); await CheckOnline(); };
   }
   void AddShot(Bitmap b, string cap, string by) {
     // cover-fit to 1.12x window for slow zoom; blurred copy for glass panels

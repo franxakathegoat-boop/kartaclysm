@@ -176,11 +176,21 @@ public partial class MainForm {
       if (exe == null || !File.Exists(exe)) throw new Exception("Native build finished but the game exe was not found.");
       s.WiiCompiledPath = exe; s.Save();
       SetStatus($"Launching Kartaclysm natively (pack v{m.version})...");
-      Process.Start(new ProcessStartInfo(exe) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(exe) });
+      StopMusicForGame(); Process.Start(new ProcessStartInfo(exe) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(exe) });
       showBar = false;
     } catch (Exception ex) { SetStatus("Native setup failed - see the message"); showBar = false; MessageBox.Show(this, ex.Message, "Kartaclysm"); }
     finally { busy = false; Invalidate(); }
   }
+
+  // ---------------- launcher music (original Kartaclysm theme, CC0) ----------------
+  System.Media.SoundPlayer music;
+  void UpdateMusic() {
+    try {
+      if (s.Music && fixedTime == null) { if (music == null) { music = new System.Media.SoundPlayer(GetType().Assembly.GetManifestResourceStream("music.wav")); music.Load(); } music.PlayLooping(); }
+      else music?.Stop();
+    } catch { }
+  }
+  void StopMusicForGame() { try { music?.Stop(); } catch { } }
 
   // ---------------- launcher self-update (launcher-vX.Y.Z GitHub releases) ----------------
   async Task SelfUpdate() {
@@ -207,7 +217,7 @@ public partial class MainForm {
       using (var src = await http.GetStreamAsync(url)) using (var outp = File.Create(tmp)) await src.CopyToAsync(outp);
       if (new FileInfo(tmp).Length < 1_000_000) { File.Delete(tmp); return; }
       File.Move(exe, exe + ".old", true); File.Move(tmp, exe, true);
-      Process.Start(new ProcessStartInfo(exe) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(exe) });
+      StopMusicForGame(); Process.Start(new ProcessStartInfo(exe) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(exe) });
       Application.Exit();
     } catch (Exception ex) { SetStatus("Launcher update check failed: " + ex.Message); }
   }
@@ -251,7 +261,7 @@ public partial class MainForm {
     var psi = new ProcessStartInfo(s.DolphinPath) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(s.DolphinPath) };
     // smoother play on weaker PCs: compile shaders in the background and pre-build them before the game starts
     foreach (var a in new[] { "-C", "GFX.Settings.ShaderCompilationMode=2", "-C", "GFX.Settings.WaitForShadersBeforeStarting=True", "-e", GameImage }) psi.ArgumentList.Add(a);
-    Process.Start(psi);
+    StopMusicForGame(); Process.Start(psi);
     showBar = false;
   }
 }

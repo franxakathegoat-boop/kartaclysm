@@ -20,6 +20,7 @@ public class Settings {
   public string PackVersion { get; set; }
   public string Mode { get; set; } = "dolphin";   // "dolphin", "native" (WiiCompiled) or "sd"
   public bool Intro { get; set; } = true;
+  public bool Music { get; set; } = true;
   public string PreparedFor { get; set; }
   public string WiiCompiledPath { get; set; }
   static string Dir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Kartaclysm");

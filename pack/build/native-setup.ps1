@@ -69,6 +69,9 @@ if ((Get-FileHash "$nat\DATA\sys\main.dol").Hash.ToLower() -ne $expect) { throw 
 New-Item -ItemType Directory -Force "$ws\Assets" | Out-Null
 Copy-Item "$nat\DATA\sys\main.dol", "$nat\DATA\files\rel\StaticR.rel" "$ws\Assets\" -Force
 
+# 3b. Kartaclysm title screen: the title files prepare.ps1 built go into native's own DATA copy
+foreach ($t in Get-ChildItem "$gen\Scene\UI" -Filter 'Title*.szs') { Copy-Item $t.FullName "$nat\DATA\files\Scene\UI\" -Force }
+
 # 4. Kartaclysm Pulsar pack (code/config from the pack, tracks from the player's own built files)
 Say 14 'Setting up the Kartaclysm pack'
 if (Test-Path $pk) { Remove-Item $pk -Recurse -Force }

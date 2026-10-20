@@ -102,6 +102,27 @@ Say 84 'Building menus and cup icons'
 Push-Location "$pack\build"
 try { Run wszst.exe @('patch', "$x\files\Scene\UI\*.szs", '--le-menu', '--cup-icons', 'cup-icons.png', '--links', '--patch-bmg', 'LE-COPY?T11', '--patch-bmg', 'OVERWRITE?T11=tracks.bmg.txt', '-D', "$gen\Scene\UI\", '-o', '-q') | Out-Null } finally { Pop-Location }
 
+# 5b. Kartaclysm title screen (our own art, pack/build/title) in every Title*.szs that has the title textures
+$tmap = @{ 'tt_title_screen_mario0' = 'title_bg'; 'tt_title_screen_mario0_bokeboke' = 'title_bg_blur'; 'tt_title_screen_title_rogo' = 'title_logo'; 'tt_title_screen_title_rogo_bokeboke' = 'title_logo_blur'; 'tt_title_screen_title_rogo_tm_only' = 'title_tm' }
+foreach ($orig in Get-ChildItem "$x\files\Scene\UI" -Filter 'Title*.szs') {
+  if (-not (Test-Path "$gen\Scene\UI\$($orig.Name)")) { Copy-Item $orig.FullName "$gen\Scene\UI\" }
+  $ts = Get-Item "$gen\Scene\UI\$($orig.Name)"
+  $td = "$work\title_$($ts.BaseName)"; if (Test-Path $td) { Remove-Item $td -Recurse -Force }
+  Run wszst.exe @('extract', $ts.FullName, '-d', $td, '-o', '-q') | Out-Null
+  $hit = $false
+  foreach ($tpl in Get-ChildItem $td -Recurse -Filter 'tt_title_screen_*.tpl') {
+    $png = $tmap[$tpl.BaseName]; if (-not $png) { continue }
+    $info = (& wimgt.exe list -l $tpl.FullName 2>&1 | Out-String)
+    $fmt = if ($info -match 'CMPR') { 'CMPR' } elseif ($info -match 'RGB5A3') { 'RGB5A3' } elseif ($info -match 'RGBA32') { 'RGBA32' } else { 'RGB565' }
+    $size = if ($info -match '(\d+)\*(\d+)') { "$($matches[1])x$($matches[2])" } else { $null }
+    $srcPng = "$pack\build\title\$png.png"
+    if ($size) { Add-Type -AssemblyName System.Drawing; $w,$h = $size.Split('x'); $im = [Drawing.Image]::FromFile($srcPng); $bm = New-Object Drawing.Bitmap $im, ([int]$w), ([int]$h); $im.Dispose(); $srcPng = "$td\$png-$size.png"; $bm.Save($srcPng); $bm.Dispose() }
+    Run wimgt.exe @('encode', $srcPng, '-x', "TPL.$fmt", '-d', $tpl.FullName, '-o', '-q') | Out-Null; $hit = $true
+  }
+  if ($hit) { Get-ChildItem $td -Filter '*.png' | Remove-Item; Run wszst.exe @('create', $td, '-d', $ts.FullName, '-o', '-q') | Out-Null }
+  Remove-Item $td -Recurse -Force
+}
+
 # 6. main.dol (LE-CODE starter, Wiimmfi) + StaticR.rel (Wiimmfi + Kartaclysm region)
 Say 90 'Patching game code'
 $opt = @('--add-lecode'); if ($Region -gt 0) { $opt += @('--wiimmfi', '--region', "$Region") }

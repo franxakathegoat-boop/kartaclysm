@@ -176,7 +176,7 @@ public partial class MainForm {
 
   // ======================= UPDATES =======================
   static readonly (string ver, string date, string kind, string[] items)[] Changelog = {
-    ("LAUNCHER 1.7.0", "OCT 20, 2026", "MAJOR", new[] { "NATIVE PC mode is fully automatic: PLAY downloads WiiCompiled, builds Kartaclysm from your own game and starts it", "Progress bar during the native build, errors saved to native-error.log", "Native mode uses its own portable settings, so a Retro Rewind WiiCompiled install isn't touched" }),
+    ("LAUNCHER 1.8.0", "OCT 20, 2026", "MAJOR", new[] { "Original Kartaclysm theme music in the launcher (mute it in Settings)", "Kartaclysm title screen in the game", "NATIVE PC mode is fully automatic: PLAY downloads WiiCompiled, builds Kartaclysm from your own game and starts it", "Progress bar during the native build, errors saved to native-error.log", "Native mode uses its own portable settings, so a Retro Rewind WiiCompiled install isn't touched" }),
     ("LAUNCHER 1.6.0 + PACK 1.1.0", "OCT 20, 2026", "MAJOR", new[] { "Fixed: PLAY could start plain Mario Kart Wii (old launchers used a Riivolution shortcut that can't run LE-CODE)", "PLAY now always builds/verifies your Kartaclysm game file first, with progress, and shows any error", "Launcher updates itself automatically", "New NATIVE PC play mode for your WiiCompiled Kartaclysm build", "New cup icons with a symbol for every disaster", "New 34th cup (Eruption) - fixes the empty slot/background on the last cup page" }),
     ("PACK 1.0.0", "OCT 20, 2026", "PACK", new[] { "The real Kartaclysm pack: 132 custom tracks in 33 named cups + the 8 original cups (LE-CODE)", "First PLAY builds the game files from YOUR copy on your PC (a few minutes, only once)", "Wiimmfi-ready: own Kartaclysm region as soon as Wiimm assigns it" }),
     ("LAUNCHER 1.5.0", "OCT 20, 2026", "UPDATE", new[] { "Fits smaller screens (e.g. laptops at 125% scaling)", "Smoother Dolphin: background shader compiling", "Online page checks the real Wiimmfi game servers", "PLAY builds and starts your own Kartaclysm game file (RMCPKC, your normal save is untouched)", "Real Wii: copies the game file to USB/SD for a USB loader" }),
@@ -299,7 +299,7 @@ public partial class MainForm {
     var desc = s.Mode == "native" ? "PLAY builds Kartaclysm natively for your PC with WiiCompiled (no emulator) from your own game, then starts it. First time: ~1 hour and ~20 GB free space." : s.Mode == "sd" ? "PLAY builds Kartaclysm and copies the game file to your USB drive / SD card for a USB loader (USB Loader GX, WiiFlow)." : "PLAY updates the pack, builds Kartaclysm from your game the first time (a few minutes), then starts it in Dolphin.";
     float dy = seg.Bottom + 16; foreach (var l in Wrap(g, desc, F(fMed, 13), r2.Width - 48)) { Txt(g, l, F(fMed, 13), Muted, r2.X + 24, dy); dy += 19; }
     // --- launcher ---
-    var r3 = new RectangleF(r2.Right + 18, y, XR - r2.Right - 18, 190); Glass(g, r3, 14, 150);
+    var r3 = new RectangleF(r2.Right + 18, y, XR - r2.Right - 18, 240); Glass(g, r3, 14, 150);
     Spaced(g, "LAUNCHER", F(fBold, 13), Cyan, r3.X + 24, r3.Y + 20, 2.6f);
     // toggle
     Txt(g, "Play intro on startup", F(fBold, 14), TextC, r3.X + 24, r3.Y + 60);
@@ -307,8 +307,13 @@ public partial class MainForm {
     using (var gp = Round(tg, 12)) { if (s.Intro) { using var lg = new LinearGradientBrush(new RectangleF(tg.X - 1, tg.Y, tg.Width + 2, tg.Height), Cyan, Blue, 0f); g.FillPath(lg, gp); } else { using var b = new SolidBrush(Color.FromArgb(60, 255, 255, 255)); g.FillPath(b, gp); } }
     using (var b = new SolidBrush(Color.White)) g.FillEllipse(b, s.Intro ? tg.Right - 21 : tg.X + 3, tg.Y + 3, 18, 18);
     AddHit(new RectangleF(r3.X + 16, r3.Y + 50, r3.Width - 32, 40), "intro", () => { s.Intro = !s.Intro; s.Save(); });
-    GhostButton(g, new RectangleF(r3.X + 24, r3.Y + 104, (r3.Width - 60) / 2, 40), "openpack", "PACK FOLDER", "folder", () => { Directory.CreateDirectory(Settings.PackDir); Process.Start(new ProcessStartInfo("explorer.exe", Settings.PackDir) { UseShellExecute = true }); }, 12);
-    GhostButton(g, new RectangleF(r3.X + 36 + (r3.Width - 60) / 2, r3.Y + 104, (r3.Width - 60) / 2, 40), "openbg", "BACKGROUNDS", "folder", () => { Directory.CreateDirectory(Settings.BackgroundsDir); Process.Start(new ProcessStartInfo("explorer.exe", Settings.BackgroundsDir) { UseShellExecute = true }); }, 12);
+    Txt(g, "Launcher music", F(fBold, 14), TextC, r3.X + 24, r3.Y + 110);
+    var tm = new RectangleF(r3.Right - 24 - 46, r3.Y + 108, 46, 24);
+    using (var gp = Round(tm, 12)) { if (s.Music) { using var lg = new LinearGradientBrush(new RectangleF(tm.X - 1, tm.Y, tm.Width + 2, tm.Height), Cyan, Blue, 0f); g.FillPath(lg, gp); } else { using var b = new SolidBrush(Color.FromArgb(60, 255, 255, 255)); g.FillPath(b, gp); } }
+    using (var b = new SolidBrush(Color.White)) g.FillEllipse(b, s.Music ? tm.Right - 21 : tm.X + 3, tm.Y + 3, 18, 18);
+    AddHit(new RectangleF(r3.X + 16, r3.Y + 100, r3.Width - 32, 40), "music", () => { s.Music = !s.Music; s.Save(); UpdateMusic(); });
+    GhostButton(g, new RectangleF(r3.X + 24, r3.Y + 154, (r3.Width - 60) / 2, 40), "openpack", "PACK FOLDER", "folder", () => { Directory.CreateDirectory(Settings.PackDir); Process.Start(new ProcessStartInfo("explorer.exe", Settings.PackDir) { UseShellExecute = true }); }, 12);
+    GhostButton(g, new RectangleF(r3.X + 36 + (r3.Width - 60) / 2, r3.Y + 154, (r3.Width - 60) / 2, 40), "openbg", "BACKGROUNDS", "folder", () => { Directory.CreateDirectory(Settings.BackgroundsDir); Process.Start(new ProcessStartInfo("explorer.exe", Settings.BackgroundsDir) { UseShellExecute = true }); }, 12);
     Txt(g, "Add your own screenshots to Backgrounds.", F(fMed, 12), Dim, r3.X + 24, r3.Y + 156);
     y += 206;
     // --- about ---
