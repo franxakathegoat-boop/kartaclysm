@@ -125,7 +125,10 @@ foreach ($orig in Get-ChildItem "$x\files\Scene\UI" -Filter 'Title*.szs') {
 
 # 6. main.dol (LE-CODE starter, Wiimmfi) + StaticR.rel (Wiimmfi + Kartaclysm region)
 Say 90 'Patching game code'
-$opt = @('--add-lecode'); if ($Region -gt 0) { $opt += @('--wiimmfi', '--region', "$Region") }
+# Wiimmfi always (Nintendo WFC is gone); own Kartaclysm region once Wiimm assigns it.
+# unlock.gct: 'Unlock Everything Without Save' (PAL 80549974 li r3,1, same patch Pulsar uses) - the save file is never touched.
+$opt = @('--add-lecode', '--wiimmfi'); if ($Region -gt 0) { $opt += @('--region', "$Region") }
+if ($reg -eq 'PAL') { $opt += @('--add-section', "$pack\build\unlock.gct") }
 Copy-Item "$x\sys\main.dol" "$work\main.dol" -Force; Copy-Item "$x\files\rel\StaticR.rel" "$gen\rel\StaticR.rel" -Force
 Run wstrt.exe (@('patch', "$work\main.dol", "$gen\rel\StaticR.rel") + $opt + @('-q')) | Out-Null
 
