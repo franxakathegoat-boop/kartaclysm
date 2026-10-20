@@ -10,7 +10,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace NitroMogger {
+namespace Kartaclysm {
 static class Program {
   [STAThread] static void Main() { ApplicationConfiguration.Initialize(); Application.Run(new MainForm()); }
 }
@@ -19,7 +19,7 @@ public class Settings {
   public string GamePath { get; set; }
   public string DolphinPath { get; set; }
   public string PackVersion { get; set; }
-  static string Dir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MarioKartNitroMogger");
+  static string Dir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Kartaclysm");
   public static string PackDir => Path.Combine(Dir, "pack");
   public static string DataDir => Dir;
   static string FilePath => Path.Combine(Dir, "settings.json");
@@ -37,36 +37,38 @@ public class Manifest {
 public class RiiOption { public string section { get; set; } public string option { get; set; } public int choice { get; set; } }
 
 public class MainForm : Form {
-  const string ManifestUrl = "https://github.com/franxakathegoat-boop/mario-kart-nitro-mogger/releases/download/pack/manifest.json";
-  readonly Button play = new() { Text = "PLAY", Font = new Font("Segoe UI", 28, FontStyle.Bold), Size = new Size(260, 90), BackColor = Color.FromArgb(230, 40, 40), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
-  readonly Button settingsBtn = new() { Text = "Settings", Size = new Size(110, 34), BackColor = Color.FromArgb(40, 40, 40), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
-  readonly Button sdBtn = new() { Text = "Export to SD (Wii)", Size = new Size(160, 34), BackColor = Color.FromArgb(40, 40, 40), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
-  readonly Label status = new() { AutoSize = false, Height = 30, Dock = DockStyle.Bottom, ForeColor = Color.White, BackColor = Color.FromArgb(200, 0, 0, 0), TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 11) };
-  readonly ProgressBar bar = new() { Dock = DockStyle.Bottom, Height = 10 };
+  const string ManifestUrl = "https://github.com/franxakathegoat-boop/kartaclysm/releases/download/pack/manifest.json";
+  readonly Button play = new() { Text = "PLAY", Font = new Font("Segoe UI Black", 30, FontStyle.Bold), Size = new Size(280, 86), BackColor = Color.FromArgb(255, 106, 0), Cursor = Cursors.Hand, ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+  readonly Button settingsBtn = new() { Text = "Settings", Size = new Size(110, 34), BackColor = Color.FromArgb(25, 25, 30), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI Semibold", 10), Cursor = Cursors.Hand };
+  readonly Button sdBtn = new() { Text = "Export to SD (Wii)", Size = new Size(160, 34), BackColor = Color.FromArgb(25, 25, 30), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI Semibold", 10), Cursor = Cursors.Hand };
+  readonly Label status = new() { AutoSize = false, Height = 30, Dock = DockStyle.Bottom, ForeColor = Color.White, BackColor = Color.FromArgb(14, 10, 18), TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 11) };
+  readonly ProgressBar bar = new() { Dock = DockStyle.Bottom, Height = 6 };
   Settings s = Settings.Load();
   static readonly HttpClient http = new() { Timeout = TimeSpan.FromMinutes(30) };
 
   public MainForm() {
-    Text = "Mario Kart Nitro Mogger";
+    Text = "Kartaclysm";
     ClientSize = new Size(1000, 620);
+    FormBorderStyle = FormBorderStyle.FixedSingle; MaximizeBox = false;
     StartPosition = FormStartPosition.CenterScreen;
     BackColor = Color.Black;
     using (var st = typeof(MainForm).Assembly.GetManifestResourceStream("home-screen.jpg"))
-      if (st != null) { BackgroundImage = Image.FromStream(st); BackgroundImageLayout = ImageLayout.Zoom; }
+      if (st != null) { BackgroundImage = Image.FromStream(st); BackgroundImageLayout = ImageLayout.Stretch; }
     DoubleBuffered = true;
-    play.FlatAppearance.BorderColor = Color.White; play.FlatAppearance.BorderSize = 3;
+    play.FlatAppearance.BorderColor = Color.FromArgb(255, 210, 120); play.FlatAppearance.BorderSize = 3; play.FlatAppearance.MouseOverBackColor = Color.FromArgb(255, 140, 30);
+    foreach (var b in new[] { settingsBtn, sdBtn }) { b.FlatAppearance.BorderColor = Color.FromArgb(255, 106, 0); b.FlatAppearance.BorderSize = 1; }
     Controls.Add(play); Controls.Add(settingsBtn); Controls.Add(sdBtn); Controls.Add(bar); Controls.Add(status);
     Resize += (_, _) => Layout2(); Layout2();
     status.Text = "Ready. Press PLAY.";
     play.Click += async (_, _) => await OnPlay();
     sdBtn.Click += async (_, _) => await ExportSd();
     settingsBtn.Click += (_, _) => { AskPaths(true); };
-    http.DefaultRequestHeaders.UserAgent.ParseAdd("MarioKartNitroMogger/1.0");
+    http.DefaultRequestHeaders.UserAgent.ParseAdd("Kartaclysm/1.0");
   }
   void Layout2() {
-    play.Location = new Point((ClientSize.Width - play.Width) / 2, ClientSize.Height - play.Height - 60);
-    settingsBtn.Location = new Point(ClientSize.Width - settingsBtn.Width - 12, 12);
-    sdBtn.Location = new Point(settingsBtn.Left - sdBtn.Width - 8, 12);
+    play.Location = new Point((ClientSize.Width - play.Width) / 2, ClientSize.Height - play.Height - 62);
+    settingsBtn.Location = new Point(ClientSize.Width - settingsBtn.Width - 12, ClientSize.Height - settingsBtn.Height - 48);
+    sdBtn.Location = new Point(12, ClientSize.Height - sdBtn.Height - 48);
   }
 
   async Task ExportSd() {
@@ -84,7 +86,7 @@ public class MainForm : Form {
           Directory.CreateDirectory(Path.GetDirectoryName(dest)); File.Copy(f, dest, true);
         }
       });
-      MessageBox.Show("Done! On the Wii: Homebrew Channel > Riivolution > Mario Kart Nitro Mogger: Enabled > Launch.", "Export to SD");
+      MessageBox.Show("Done! On the Wii: Homebrew Channel > Riivolution > Kartaclysm: Enabled > Launch.", "Export to SD");
       status.Text = "Exported to " + root;
     } catch (Exception ex) { MessageBox.Show(ex.Message, "Error"); }
     finally { sdBtn.Enabled = true; }
@@ -163,12 +165,12 @@ public class MainForm : Form {
   void Launch(Manifest m) {
     var desc = new Dictionary<string, object> {
       ["type"] = "dolphin-game-mod-descriptor", ["version"] = 1, ["base-file"] = s.GamePath,
-      ["display-name"] = "Mario Kart Nitro Mogger",
+      ["display-name"] = "Kartaclysm",
       ["riivolution"] = new Dictionary<string, object> { ["patches"] = new[] { new Dictionary<string, object> {
         ["xml"] = Local(m.riivolution_xml), ["root"] = Settings.PackDir,
         ["options"] = m.options.Select(o => new Dictionary<string, object> { ["section-name"] = o.section, ["option-name"] = o.option, ["choice"] = o.choice }).ToArray() } } }
     };
-    var jf = Path.Combine(Settings.DataDir, "NitroMogger.json");
+    var jf = Path.Combine(Settings.DataDir, "Kartaclysm.json");
     File.WriteAllText(jf, JsonSerializer.Serialize(desc, new JsonSerializerOptions { WriteIndented = true }));
     status.Text = $"Launching Dolphin (pack v{m.version})...";
     Process.Start(new ProcessStartInfo(s.DolphinPath) { ArgumentList = { "-e", jf }, UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(s.DolphinPath) });

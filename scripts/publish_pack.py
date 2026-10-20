@@ -3,7 +3,7 @@
 Uploads every file under pack/ to the rolling 'pack' release (only changed ones) + manifest.json.
 NEVER put Nintendo game files in pack/ - only fan-made tracks + riivolution xml."""
 import hashlib, json, os, subprocess, sys
-REPO = "franxakathegoat-boop/mario-kart-nitro-mogger"; TAG = "pack"
+REPO = "franxakathegoat-boop/kartaclysm"; TAG = "pack"
 root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pack")
 ver = sys.argv[1]
 def asset(rel): return rel.replace("/", "__")
