@@ -65,9 +65,9 @@ public static class Fetch {
       try {
         for (int t = 1; ; t++) {
           string fail = null;
-          try { var b = await http.GetByteArrayAsync(u); if (b.Length < 1000) throw new Exception("too small"); File.WriteAllBytes(files[i] + ".part", b); File.Copy(files[i] + ".part", files[i], true); File.Delete(files[i] + ".part"); await Task.Delay(1500); return; }
+          try { var b = await http.GetByteArrayAsync(u); if (b.Length < 1000 || b[0] != (byte)'W' || b[1] != (byte)'B' || b[2] != (byte)'Z') throw new Exception("not a track file (404)"); File.WriteAllBytes(files[i] + ".part", b); File.Copy(files[i] + ".part", files[i], true); File.Delete(files[i] + ".part"); await Task.Delay(1500); return; }
           catch (Exception e) { fail = e.Message; }
-          if (t >= 8) { err = u + ": " + fail; return; }
+          if (t >= 8 || (fail.Contains("404") && u.Contains("github.com"))) { err = u + ": " + fail; return; }
           await Task.Delay(fail.Contains("429") ? 30000 * t : 3000 * t);
         }
       } finally { gate.Release(); }
@@ -78,9 +78,15 @@ public static class Fetch {
 '@
 $need = @($ct | Where-Object { -not (Test-Path "$cache\$($_.ct).wbz") })
 if ($need.Count) {
-  Say 20 "Downloading $($need.Count) tracks from Wiimm's CT archive"
-  $e = [Fetch]::All([string[]]($need | ForEach-Object { "https://ct.wiimm.de/d/$($_.ct)" }), [string[]]($need | ForEach-Object { "$cache\$($_.ct).wbz" }), 1)
-  if ($e) { throw "Track download failed: $e" }
+  Say 20 "Downloading $($need.Count) tracks (Kartaclysm mirror)"
+  # Kartaclysm mirror first (GitHub, no rate limit); Wiimm's archive (rate-limited, 429) only as fallback
+  $null = [Fetch]::All([string[]]($need | ForEach-Object { "https://github.com/franxakathegoat-boop/kartaclysm/releases/download/tracks/$($_.ct).wbz" }), [string[]]($need | ForEach-Object { "$cache\$($_.ct).wbz" }), 4)
+  $need = @($ct | Where-Object { -not (Test-Path "$cache\$($_.ct).wbz") })
+  if ($need.Count) {
+    Say 30 "Downloading $($need.Count) tracks from Wiimm's CT archive"
+    $e = [Fetch]::All([string[]]($need | ForEach-Object { "https://ct.wiimm.de/d/$($_.ct)" }), [string[]]($need | ForEach-Object { "$cache\$($_.ct).wbz" }), 1)
+    if ($e) { throw "Track download failed: $e" }
+  }
 }
 $n = 0
 foreach ($t in $ct) {

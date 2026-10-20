@@ -6,6 +6,8 @@ import hashlib, json, os, subprocess, sys
 REPO = "franxakathegoat-boop/kartaclysm"; TAG = "pack"
 root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pack")
 ver = sys.argv[1]
+# the launcher rebuilds when gen/stamp.json "pack" != manifest version, so the stamp must always match
+open(os.path.join(root, "build", "stamp.txt"), "w").write(ver + "\n")
 def asset(rel): return rel.replace("/", "__")
 subprocess.run(["gh","release","view",TAG,"-R",REPO],capture_output=True).returncode and \
   subprocess.run(["gh","release","create",TAG,"-R",REPO,"--title","Pack content","--notes","Rolling pack files used by the launcher.","--latest=false"],check=True)

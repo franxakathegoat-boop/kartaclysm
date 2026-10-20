@@ -121,7 +121,7 @@ Replacements: SW2 Great ? Block Ruins -> RMX Donut Plains 1 (CT 14576), SW2 Bows
 | Faultline Cup | 3DS Rosalina's Ice World | SquireTurnbolt, Jaunn666 | CT archive [12746](https://ct.wiimm.de/i/12746) |
 | Faultline Cup | 3DS Bowser's Castle | ZPL | CT archive [15900](https://ct.wiimm.de/i/15900) |
 | Faultline Cup | 3DS Rainbow Road | ZPL | CT archive [20292](https://ct.wiimm.de/i/20292) |
-| Faultline Cup | Wii U Mario Kart Stadium | ZPL | CT archive [20069](https://ct.wiimm.de/i/20069) |
+| Faultline Cup | Wii U Mario Kart Stadium | TheGamingBram, Mr. Brian, Diego Vapy | CT archive [10780](https://ct.wiimm.de/i/10780) |
 | Tsunami Cup | Wii U Water Park | ISwearChris | hosted (True) |
 | Tsunami Cup | Wii U Sweet Sweet Canyon | ISwearChris | hosted (True) |
 | Tsunami Cup | Wii U Thwomp Ruins | ZPL | hosted (True) |
