@@ -8,3 +8,10 @@ You need your OWN Mario Kart Wii game file and Dolphin. No Nintendo files are di
 ## Art pipeline (v1.4)
 
 `python3 art4/build4.py` regenerates the logo, wordmark, symbol and app.ico in src/Assets. Previews: `Kartaclysm.exe --render <dir> home|tracks|updates|online|settings|intro`.
+
+## The pack (v1.0.x)
+- 33 named cups (132 custom tracks) plus the 8 original cups, powered by LE-CODE (build 40).
+- Nothing from the game is shipped. On the first PLAY the launcher runs `pack/build/prepare.ps1` on your PC. It downloads Wiimm's tools, slowly fetches 101 tracks from Wiimm's CT archive (one at a time, with pauses), rebuilds them with your own game files, and writes `%APPDATA%\Kartaclysm\gen\Kartaclysm.wbfs` (game ID RMCPKC, so your normal save is untouched). Dolphin then starts that file.
+- The other 31 tracks are hosted fan releases. Track sources and authors are listed in [CREDITS.md](CREDITS.md).
+- Real Wii: choose REAL WII · USB in Settings; PLAY copies the WBFS to `wbfs/Kartaclysm [RMCPKC]/` for USB Loader GX or WiiFlow.
+- Online: Wiimmfi, with its own Kartaclysm region once Wiimm assigns one (`wiimmfi_region` in pack.json; 0 = offline).

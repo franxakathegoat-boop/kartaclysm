@@ -90,7 +90,11 @@ foreach ($t in $ct) {
 
 # 5. Menus: LE-CODE cup scrolling, cup icons with our cup names, track names
 Say 84 'Building menus and cup icons'
-Run wszst.exe @('patch', "$x\files\Scene\UI\*.szs", '--le-menu', '--cup-icons', "$pack\build\cup-icons.png", '--links', '--patch-bmg', "OVERWRITE=$pack\build\tracks.bmg.txt", '-D', "$gen\Scene\UI\", '-o', '-q') | Out-Null
+# Track names go into Common.bmg only (T11 exists only there): Menu.bmg entries would shadow them.
+# LE-COPY puts the player's own original track names into the LE-CODE range; the BMG file path is
+# relative because the '?MID=' condition syntax does not accept 'C:' paths.
+Push-Location "$pack\build"
+try { Run wszst.exe @('patch', "$x\files\Scene\UI\*.szs", '--le-menu', '--cup-icons', 'cup-icons.png', '--links', '--patch-bmg', 'LE-COPY?T11', '--patch-bmg', 'OVERWRITE?T11=tracks.bmg.txt', '-D', "$gen\Scene\UI\", '-o', '-q') | Out-Null } finally { Pop-Location }
 
 # 6. main.dol (LE-CODE starter, Wiimmfi) + StaticR.rel (Wiimmfi + Kartaclysm region)
 Say 90 'Patching game code'
