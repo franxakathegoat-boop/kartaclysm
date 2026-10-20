@@ -126,11 +126,18 @@ foreach ($orig in Get-ChildItem "$x\files\Scene\UI" -Filter 'Title*.szs') {
 # 6. main.dol (LE-CODE starter, Wiimmfi) + StaticR.rel (Wiimmfi + Kartaclysm region)
 Say 90 'Patching game code'
 # Wiimmfi always (Nintendo WFC is gone); own Kartaclysm region once Wiimm assigns it.
-# unlock.gct: 'Unlock Everything Without Save' (PAL 80549974 li r3,1, same patch Pulsar uses) - the save file is never touched.
 $opt = @('--add-lecode', '--wiimmfi'); if ($Region -gt 0) { $opt += @('--region', "$Region") }
-if ($reg -eq 'PAL') { $opt += @('--add-section', "$pack\build\unlock.gct") }
 Copy-Item "$x\sys\main.dol" "$work\main.dol" -Force; Copy-Item "$x\files\rel\StaticR.rel" "$gen\rel\StaticR.rel" -Force
 Run wstrt.exe (@('patch', "$work\main.dol", "$gen\rel\StaticR.rel") + $opt + @('-q')) | Out-Null
+# 'Unlock Everything Without Save' (PAL 0x80549974 = li r3,1, the same patch Pulsar ships): the unlock check
+# always answers yes. Written straight into StaticR.rel (loaded at 0x805102E0), so no cheat handler is needed
+# and the save file is never touched.
+if ($reg -eq 'PAL') {
+  $rp = "$gen\rel\StaticR.rel"; $rb = [IO.File]::ReadAllBytes($rp); $o = 0x80549974 - 0x805102E0
+  if ($rb[$o] -eq 0x54 -and $rb[$o+1] -eq 0x03 -and $rb[$o+2] -eq 0x0F -and $rb[$o+3] -eq 0xFE) {
+    $rb[$o] = 0x38; $rb[$o+1] = 0x60; $rb[$o+2] = 0x00; $rb[$o+3] = 0x01; [IO.File]::WriteAllBytes($rp, $rb)
+  } elseif (-not ($rb[$o] -eq 0x38 -and $rb[$o+1] -eq 0x60)) { Write-Warning 'Unlock patch skipped: unexpected StaticR.rel' }
+}
 
 # main.dol cannot be swapped by Riivolution, so turn the differences into memory patches
 Add-Type -TypeDefinition @'
