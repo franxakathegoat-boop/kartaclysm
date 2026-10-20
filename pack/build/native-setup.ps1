@@ -113,11 +113,13 @@ if ($Force -or -not $exeOut -or (Get-Content "$nat\build.stamp" -EA 0) -ne $want
 Set-Content (Join-Path $exeOut.DirectoryName 'portable.txt') 'Kartaclysm portable install'
 $ud = Join-Path $exeOut.DirectoryName 'UserData'; New-Item -ItemType Directory -Force $ud | Out-Null
 $cfg = Join-Path $ud 'Config.toml'
-$q = { param($s) '"' + ($s -replace '\\', '\\') + '"' }
-$lines = if (Test-Path $cfg) { @(Get-Content $cfg | Where-Object { $_ -notmatch '^\s*(dvd_root|pulsar_pack_root)\s*=' }) } else { @() }
-if (-not ($lines -match '^\s*\[paths\]')) { $lines += '[paths]' }
-$i = [array]::IndexOf($lines, ($lines -match '^\s*\[paths\]')[0])
-$new = @($lines[0..$i]) + @("dvd_root = $(& $q "$nat\DATA")", "pulsar_pack_root = $(& $q $pk)") + @(if ($i + 1 -lt $lines.Count) { $lines[($i+1)..($lines.Count-1)] })
-Set-Content $cfg $new -Encoding UTF8
+function TomlStr($v) { '"' + ($v -replace '\\', '\\') + '"' }
+$txt = if (Test-Path $cfg) { [IO.File]::ReadAllText($cfg) } else { '' }
+if ($txt -match '^\[\r?\n\]') { $txt = '' }   # file broken by native-setup 1.1.2
+$txt = [regex]::Replace($txt, '(?m)^\s*(dvd_root|pulsar_pack_root)\s*=.*\r?\n?', '')
+$ins = "dvd_root = $(TomlStr "$nat\DATA")`r`npulsar_pack_root = $(TomlStr $pk)`r`n"
+if ($txt -match '(?m)^\s*\[paths\]\s*$') { $txt = ([regex]'(?m)^\s*\[paths\]\s*\r?\n').Replace($txt, [Text.RegularExpressions.MatchEvaluator]{ param($mm) $mm.Value + $ins }, 1) }
+else { $txt = $txt.TrimEnd() + "`r`n`r`n[paths]`r`n" + $ins }
+[IO.File]::WriteAllText($cfg, $txt.TrimStart(), (New-Object Text.UTF8Encoding($false)))
 Write-Output "EXE $($exeOut.FullName)"
 Say 100 'Native Kartaclysm ready'
