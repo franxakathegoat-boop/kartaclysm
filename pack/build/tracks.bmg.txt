@@ -134,4 +134,7 @@
   70c5	= RMX Vanilla Lake 1
   70c6	= RMX Vanilla Lake 2
   70c7	= RMX Ghost Valley 1
-
+  70c8	= GBA Shy Guy Beach
+  70c9	= SNES Mario Circuit 3
+  70ca	= 3DS Wario Shipyard
+  70cb	= SNES Choco Island 3

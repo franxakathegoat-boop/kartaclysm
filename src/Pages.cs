@@ -30,7 +30,7 @@ public partial class MainForm {
   // ======================= HOME =======================
   static readonly (string date, string tag, string title, string body)[] News = {
     ("OCT 20, 2026", "LAUNCHER", "Kartaclysm launcher 1.4", "Brand-new look: track browser, online status, settings and a cinematic intro."),
-    ("OCT 20, 2026", "PACK", "132 retro tracks lined up", "33 cups of retro ports by the Custom Mario Kart community."),
+    ("OCT 20, 2026", "PACK", "136 retro tracks lined up", "34 cups of retro ports by the Custom Mario Kart community."),
     ("COMING SOON", "ONLINE", "Wiimmfi registration", "Online races for the full pack open as soon as the pack is registered."),
   };
   void DrawHome(Graphics g) {
@@ -41,9 +41,9 @@ public partial class MainForm {
     foreach (var line in Wrap(g, "Every classic course from SNES to 3DS, rebuilt as faithful retro ports. One click to update, one click to race.", F(fMed, 17), 500)) { Txt(g, line, F(fMed, 17), Color.FromArgb(200, 210, 230), X0, y); y += 25; }
     y += 14;
     float cx = X0;
-    Chip(g, cx, y, "132 TRACKS", Cyan, out var w1); cx += w1 + 10;
+    Chip(g, cx, y, "136 TRACKS", Cyan, out var w1); cx += w1 + 10;
     Chip(g, cx, y, "33 CUPS", Magenta, out var w2); cx += w2 + 10;
-    Chip(g, cx, y, s.Mode == "sd" ? "REAL WII · USB" : "DOLPHIN", Ok, out _);
+    Chip(g, cx, y, s.Mode == "sd" ? "REAL WII · USB" : s.Mode == "native" ? "NATIVE · WIICOMPILED" : "DOLPHIN", Ok, out _);
     y += 58;
     bool sd = s.Mode == "sd";
     PrimaryButton(g, new RectangleF(X0, y, 280, 70), "play", busy ? "WORKING" : sd ? "EXPORT" : "PLAY", sd ? "sd" : "play", () => _ = OnPlay(), !busy);
@@ -53,7 +53,7 @@ public partial class MainForm {
     Txt(g, status.ToUpperInvariant(), F(fBold, 14), TextC, X0, y);
     ProgressBar(g, new RectangleF(X0, y + 26, 486, 5), showBar ? (float)progress : 0);
     var pv = string.IsNullOrEmpty(s.PackVersion) ? "NOT INSTALLED" : "V" + s.PackVersion;
-    Spaced(g, $"PACK {pv}   ·   LAUNCHER V{LauncherVersion}   ·   {(sd ? "MODE: REAL WII" : "MODE: DOLPHIN")}", F(fSemi, 11), Dim, X0, y + 42, 1.4f);
+    Spaced(g, $"PACK {pv}   ·   LAUNCHER V{LauncherVersion}   ·   {(sd ? "MODE: REAL WII" : s.Mode == "native" ? "MODE: NATIVE" : "MODE: DOLPHIN")}", F(fSemi, 11), Dim, X0, y + 42, 1.4f);
 
     // news column
     float nx = W - 44 - 300, ny = 92;
@@ -176,6 +176,7 @@ public partial class MainForm {
 
   // ======================= UPDATES =======================
   static readonly (string ver, string date, string kind, string[] items)[] Changelog = {
+    ("LAUNCHER 1.6.0 + PACK 1.1.0", "OCT 20, 2026", "MAJOR", new[] { "Fixed: PLAY could start plain Mario Kart Wii (old launchers used a Riivolution shortcut that can't run LE-CODE)", "PLAY now always builds/verifies your Kartaclysm game file first, with progress, and shows any error", "Launcher updates itself automatically", "New NATIVE PC play mode for your WiiCompiled Kartaclysm build", "New cup icons with a symbol for every disaster", "New 34th cup (Eruption) - fixes the empty slot/background on the last cup page" }),
     ("PACK 1.0.0", "OCT 20, 2026", "PACK", new[] { "The real Kartaclysm pack: 132 custom tracks in 33 named cups + the 8 original cups (LE-CODE)", "First PLAY builds the game files from YOUR copy on your PC (a few minutes, only once)", "Wiimmfi-ready: own Kartaclysm region as soon as Wiimm assigns it" }),
     ("LAUNCHER 1.5.0", "OCT 20, 2026", "UPDATE", new[] { "Fits smaller screens (e.g. laptops at 125% scaling)", "Smoother Dolphin: background shader compiling", "Online page checks the real Wiimmfi game servers", "PLAY builds and starts your own Kartaclysm game file (RMCPKC, your normal save is untouched)", "Real Wii: copies the game file to USB/SD for a USB loader" }),
     ("LAUNCHER 1.4.1", "OCT 20, 2026", "UPDATE", new[] { "All 33 cups now have names" }),
@@ -251,7 +252,7 @@ public partial class MainForm {
     Glass(g, nr2, 14, 150);
     Spaced(g, "KARTACLYSM ROOMS", F(fBold, 14), TextC, nr2.X + 22, nr2.Y + 20, 2);
     float yy = nr2.Y + 50; bool reg = WiimmfiRegion > 0;
-    var txt = reg ? $"Kartaclysm races on Wiimmfi in its own region ({WiimmfiRegion}): you only meet other Kartaclysm players, on the same 132 tracks."
+    var txt = reg ? $"Kartaclysm races on Wiimmfi in its own region ({WiimmfiRegion}): you only meet other Kartaclysm players, on the same 136 tracks."
                   : "Kartaclysm will race on Wiimmfi in its own private region, so you only meet other Kartaclysm players. Online opens as soon as Wiimm assigns the region; until then play Grand Prix, VS and Time Trials offline.";
     foreach (var l in Wrap(g, txt, F(fMed, 14), nr2.Width - 44)) { Txt(g, l, F(fMed, 14), Muted, nr2.X + 22, yy); yy += 21; }
     yy += 14;
@@ -282,9 +283,9 @@ public partial class MainForm {
     Spaced(g, "PLAY MODE", F(fBold, 13), Cyan, r2.X + 24, r2.Y + 20, 2.6f);
     var seg = new RectangleF(r2.X + 24, r2.Y + 52, r2.Width - 48, 46);
     using (var gp = Round(seg, 12)) { using var b = new SolidBrush(Color.FromArgb(110, 0, 0, 0)); g.FillPath(b, gp); }
-    string[] modes = { "dolphin", "sd" }; string[] ml = { "DOLPHIN · PC", "REAL WII · USB" }; string[] mi = { "play", "sd" };
-    for (int i = 0; i < 2; i++) {
-      var sr = new RectangleF(seg.X + 4 + i * (seg.Width - 8) / 2, seg.Y + 4, (seg.Width - 8) / 2, seg.Height - 8); string id = "mode" + i; int ii = i;
+    string[] modes = { "dolphin", "native", "sd" }; string[] ml = { "DOLPHIN", "NATIVE PC", "REAL WII" }; string[] mi = { "play", "play", "sd" };
+    for (int i = 0; i < 3; i++) {
+      var sr = new RectangleF(seg.X + 4 + i * (seg.Width - 8) / 3, seg.Y + 4, (seg.Width - 8) / 3, seg.Height - 8); string id = "mode" + i; int ii = i;
       bool act = s.Mode == modes[i], hv = Hover(id);
       if (act) using (var gp = Round(sr, 9)) using (var lg = new LinearGradientBrush(new RectangleF(sr.X - 1, sr.Y, sr.Width + 2, sr.Height), Cyan, Blue, 0f)) g.FillPath(lg, gp);
       else if (hv) using (var gp = Round(sr, 9)) using (var b = new SolidBrush(Color.FromArgb(24, 255, 255, 255))) g.FillPath(b, gp);
@@ -294,7 +295,7 @@ public partial class MainForm {
       Spaced(g, ml[i], f, tc, sr.X + (sr.Width - lw - 26) / 2 + 26, sr.Y + 11, 1.6f);
       AddHit(sr, id, () => { s.Mode = modes[ii]; s.Save(); });
     }
-    var desc = s.Mode == "sd" ? "PLAY builds Kartaclysm and copies the game file to your USB drive / SD card for a USB loader (USB Loader GX, WiiFlow)." : "PLAY updates the pack, builds Kartaclysm from your game the first time (a few minutes), then starts it in Dolphin.";
+    var desc = s.Mode == "native" ? "PLAY updates the pack and starts Kartaclysm natively with WiiCompiled (no emulator). Needs your local WiiCompiled Kartaclysm build; PLAY asks for its .exe once." : s.Mode == "sd" ? "PLAY builds Kartaclysm and copies the game file to your USB drive / SD card for a USB loader (USB Loader GX, WiiFlow)." : "PLAY updates the pack, builds Kartaclysm from your game the first time (a few minutes), then starts it in Dolphin.";
     float dy = seg.Bottom + 16; foreach (var l in Wrap(g, desc, F(fMed, 13), r2.Width - 48)) { Txt(g, l, F(fMed, 13), Muted, r2.X + 24, dy); dy += 19; }
     // --- launcher ---
     var r3 = new RectangleF(r2.Right + 18, y, XR - r2.Right - 18, 190); Glass(g, r3, 14, 150);
@@ -381,7 +382,7 @@ public partial class MainForm {
       if (lu > 0) {
         float lw = 380 * lu, lx = W / 2f - lw / 2, ly = cy + wmH / 2 + 46;
         using var lg = new LinearGradientBrush(new RectangleF(lx - 1, ly, lw + 2, 2), Cyan, Magenta, 0f); g.FillRectangle(lg, lx, ly, lw, 2);
-        var tag = "132 RETRO TRACKS  ·  ONE CLICK TO RACE"; float tw = Spaced(g, tag, F(fBold, 13), TextC, 0, 0, 3.5f, false);
+        var tag = "136 RETRO TRACKS  ·  ONE CLICK TO RACE"; float tw = Spaced(g, tag, F(fBold, 13), TextC, 0, 0, 3.5f, false);
         Spaced(g, tag, F(fBold, 13), A(Muted, (int)(255 * lu)), W / 2f - tw / 2, ly + 14, 3.5f);
       }
     }

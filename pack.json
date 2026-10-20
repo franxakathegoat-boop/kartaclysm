@@ -139,6 +139,10 @@
   {
    "n": 33,
    "name": "Kartaclysm Cup"
+  },
+  {
+   "n": 34,
+   "name": "Eruption Cup"
   }
  ],
  "prepare": "build/prepare.ps1",

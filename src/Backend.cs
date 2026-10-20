@@ -144,13 +144,63 @@ public partial class MainForm {
 
   async Task OnPlay() {
     if (s.Mode == "sd") { await ExportSd(); return; }
+    if (s.Mode == "native") { await PlayNative(); return; }
     if (busy) return; busy = true; Invalidate();
     try {
       if (!EnsurePaths()) { SetStatus("Setup cancelled"); return; }
       var m = await UpdateAndPrepare();
       Launch(m);
-    } catch (Exception ex) { SetStatus("Something went wrong"); MessageBox.Show(this, ex.Message, "Kartaclysm"); }
+    } catch (Exception ex) { SetStatus("Setup failed - see the message"); showBar = false; MessageBox.Show(this, ex.Message, "Kartaclysm"); }
     finally { busy = false; Invalidate(); }
+  }
+
+  // ---------------- native mode (WiiCompiled Kartaclysm build) ----------------
+  async Task PlayNative() {
+    if (busy) return; busy = true; Invalidate();
+    try {
+      Manifest m = null;
+      try { SetStatus("Checking for updates..."); m = await UpdatePack(); } catch (Exception ex) { SetStatus("Update failed (offline?): " + ex.Message); }
+      if (string.IsNullOrEmpty(s.WiiCompiledPath) || !File.Exists(s.WiiCompiledPath)) {
+        MessageBox.Show(this, "Select the Kartaclysm.exe from your WiiCompiled Kartaclysm build (LocalBuild.ps1 -Profile kartaclysm output folder).\n\nNo build yet? Switch Settings > Play mode to DOLPHIN for now.", "Native mode");
+        using var d = new OpenFileDialog { Filter = "WiiCompiled Kartaclysm|*.exe" };
+        if (d.ShowDialog(this) != DialogResult.OK) { SetStatus("Native mode: no WiiCompiled build selected"); return; }
+        s.WiiCompiledPath = d.FileName; s.Save();
+      }
+      SetStatus("Launching Kartaclysm natively (WiiCompiled)...");
+      Process.Start(new ProcessStartInfo(s.WiiCompiledPath) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(s.WiiCompiledPath) });
+      showBar = false;
+    } catch (Exception ex) { SetStatus("Native launch failed"); MessageBox.Show(this, ex.Message, "Kartaclysm"); }
+    finally { busy = false; Invalidate(); }
+  }
+
+  // ---------------- launcher self-update (launcher-vX.Y.Z GitHub releases) ----------------
+  async Task SelfUpdate() {
+    try {
+      var exe = Environment.ProcessPath; if (exe == null) return;
+      try { File.Delete(exe + ".old"); } catch { }
+      // launchers before 1.5 left a Riivolution descriptor that boots the plain game; never use it
+      try { File.Delete(Path.Combine(Settings.DataDir, "Kartaclysm.json")); } catch { }
+      using var req = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/franxakathegoat-boop/kartaclysm/releases?per_page=30");
+      req.Headers.UserAgent.ParseAdd("Kartaclysm-Launcher/" + LauncherVersion);
+      using var resp = await http.SendAsync(req); if (!resp.IsSuccessStatusCode) return;
+      using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+      Version cur = Version.Parse(LauncherVersion), best = cur; string url = null;
+      foreach (var r in doc.RootElement.EnumerateArray()) {
+        var tag = r.GetProperty("tag_name").GetString() ?? "";
+        if (!tag.StartsWith("launcher-v") || r.GetProperty("draft").GetBoolean()) continue;
+        if (!Version.TryParse(tag.Substring(10), out var v) || v <= best) continue;
+        foreach (var a in r.GetProperty("assets").EnumerateArray())
+          if (a.GetProperty("name").GetString() == "Kartaclysm.exe") { best = v; url = a.GetProperty("browser_download_url").GetString(); }
+      }
+      if (url == null) return;
+      SetStatus($"Updating the launcher to v{best}...");
+      var tmp = exe + ".new";
+      using (var src = await http.GetStreamAsync(url)) using (var outp = File.Create(tmp)) await src.CopyToAsync(outp);
+      if (new FileInfo(tmp).Length < 1_000_000) { File.Delete(tmp); return; }
+      File.Move(exe, exe + ".old", true); File.Move(tmp, exe, true);
+      Process.Start(new ProcessStartInfo(exe) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(exe) });
+      Application.Exit();
+    } catch (Exception ex) { SetStatus("Launcher update check failed: " + ex.Message); }
   }
 
   static string Sha(string f) { using var st = File.OpenRead(f); return Convert.ToHexString(SHA256.HashData(st)).ToLowerInvariant(); }

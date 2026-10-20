@@ -18,9 +18,10 @@ public class Settings {
   public string GamePath { get; set; }
   public string DolphinPath { get; set; }
   public string PackVersion { get; set; }
-  public string Mode { get; set; } = "dolphin";   // "dolphin" or "sd"
+  public string Mode { get; set; } = "dolphin";   // "dolphin", "native" (WiiCompiled) or "sd"
   public bool Intro { get; set; } = true;
   public string PreparedFor { get; set; }
+  public string WiiCompiledPath { get; set; }
   static string Dir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Kartaclysm");
   public static string PackDir => Path.Combine(Dir, "pack");
   public static string DataDir => Dir;
