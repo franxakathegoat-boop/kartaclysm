@@ -10,7 +10,8 @@
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-    <Version>1.1.0</Version>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <Version>1.2.0</Version>
   </PropertyGroup>
-  <ItemGroup><EmbeddedResource Include="Assets\home-screen.jpg" LogicalName="home-screen.jpg" /></ItemGroup>
+  <ItemGroup><EmbeddedResource Include="Assets\home-screen.jpg" LogicalName="home-screen.jpg" /><EmbeddedResource Include="Assets\Rajdhani-Bold.ttf" LogicalName="bold.ttf" /><EmbeddedResource Include="Assets\Rajdhani-SemiBold.ttf" LogicalName="semi.ttf" /></ItemGroup>
 </Project>
