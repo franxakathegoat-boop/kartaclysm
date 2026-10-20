@@ -40,6 +40,7 @@ public class MainForm : Form {
   const string ManifestUrl = "https://github.com/franxakathegoat-boop/mario-kart-nitro-mogger/releases/download/pack/manifest.json";
   readonly Button play = new() { Text = "PLAY", Font = new Font("Segoe UI", 28, FontStyle.Bold), Size = new Size(260, 90), BackColor = Color.FromArgb(230, 40, 40), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
   readonly Button settingsBtn = new() { Text = "Settings", Size = new Size(110, 34), BackColor = Color.FromArgb(40, 40, 40), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
+  readonly Button sdBtn = new() { Text = "Export to SD (Wii)", Size = new Size(160, 34), BackColor = Color.FromArgb(40, 40, 40), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
   readonly Label status = new() { AutoSize = false, Height = 30, Dock = DockStyle.Bottom, ForeColor = Color.White, BackColor = Color.FromArgb(200, 0, 0, 0), TextAlign = ContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 11) };
   readonly ProgressBar bar = new() { Dock = DockStyle.Bottom, Height = 10 };
   Settings s = Settings.Load();
@@ -54,16 +55,39 @@ public class MainForm : Form {
       if (st != null) { BackgroundImage = Image.FromStream(st); BackgroundImageLayout = ImageLayout.Zoom; }
     DoubleBuffered = true;
     play.FlatAppearance.BorderColor = Color.White; play.FlatAppearance.BorderSize = 3;
-    Controls.Add(play); Controls.Add(settingsBtn); Controls.Add(bar); Controls.Add(status);
+    Controls.Add(play); Controls.Add(settingsBtn); Controls.Add(sdBtn); Controls.Add(bar); Controls.Add(status);
     Resize += (_, _) => Layout2(); Layout2();
     status.Text = "Ready. Press PLAY.";
     play.Click += async (_, _) => await OnPlay();
+    sdBtn.Click += async (_, _) => await ExportSd();
     settingsBtn.Click += (_, _) => { AskPaths(true); };
     http.DefaultRequestHeaders.UserAgent.ParseAdd("MarioKartNitroMogger/1.0");
   }
   void Layout2() {
     play.Location = new Point((ClientSize.Width - play.Width) / 2, ClientSize.Height - play.Height - 60);
     settingsBtn.Location = new Point(ClientSize.Width - settingsBtn.Width - 12, 12);
+    sdBtn.Location = new Point(settingsBtn.Left - sdBtn.Width - 8, 12);
+  }
+
+  async Task ExportSd() {
+    sdBtn.Enabled = false;
+    try {
+      try { status.Text = "Checking for updates..."; await UpdatePack(); } catch (Exception ex) { status.Text = "Update failed: " + ex.Message; }
+      if (!Directory.Exists(Settings.PackDir)) { MessageBox.Show("Pack not downloaded yet."); return; }
+      using var d = new FolderBrowserDialog { Description = "Choose your Wii SD card (the drive root, e.g. E:\\)" };
+      if (d.ShowDialog(this) != DialogResult.OK) return;
+      var root = Path.GetPathRoot(d.SelectedPath);
+      if (MessageBox.Show($"Copy the pack to {root} ?", "Export to SD", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
+      await Task.Run(() => {
+        foreach (var f in Directory.GetFiles(Settings.PackDir, "*", SearchOption.AllDirectories)) {
+          var dest = Path.Combine(root, Path.GetRelativePath(Settings.PackDir, f));
+          Directory.CreateDirectory(Path.GetDirectoryName(dest)); File.Copy(f, dest, true);
+        }
+      });
+      MessageBox.Show("Done! On the Wii: Homebrew Channel > Riivolution > Mario Kart Nitro Mogger: Enabled > Launch.", "Export to SD");
+      status.Text = "Exported to " + root;
+    } catch (Exception ex) { MessageBox.Show(ex.Message, "Error"); }
+    finally { sdBtn.Enabled = true; }
   }
 
   bool AskPaths(bool force) {
