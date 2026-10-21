@@ -1,6 +1,9 @@
 # Kartaclysm first-run builder. Runs on the player's PC and builds every file that is derived
 # from the player's own Mario Kart Wii copy. Nothing from the game is ever uploaded or shipped.
-param([Parameter(Mandatory)][string]$Game, [string]$Root = "$env:APPDATA\Kartaclysm", [int]$Region = 0)
+param([Parameter(Mandatory)][string]$Game, [string]$Root = "$env:APPDATA\Kartaclysm", [int]$Region = 0,
+      # Experimental (off by default): path to a Kartaclysm WFC stage0 .gct (pack\build\wfc\kartaclysm-wfc.gct).
+      # When set, the build talks to our own WFC server instead of Wiimmfi. Not shipped to players yet.
+      [string]$WfcGct = "")
 $ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue'
 [Net.ServicePointManager]::SecurityProtocol = 'Tls12'
 function Say($p, $m) { Write-Output ("PROGRESS {0} {1}" -f $p, $m) }
@@ -130,7 +133,14 @@ foreach ($orig in Get-ChildItem "$x\files\Scene\UI" -Filter 'Title*.szs') {
 # 6. main.dol (LE-CODE starter, Wiimmfi) + StaticR.rel (Wiimmfi + Kartaclysm region)
 Say 90 'Patching game code'
 # Wiimmfi always (Nintendo WFC is gone); own Kartaclysm region once Wiimm assigns it.
-$opt = @('--add-lecode', '--wiimmfi'); if ($Region -gt 0) { $opt += @('--region', "$Region") }
+if ($WfcGct) {
+  # Own Kartaclysm WFC server: no Wiimmfi patch; the WiiLink-WFC stage0 code (Gecko, run by LE-CODE's code
+  # handler) redirects NAS to http://nas.<domain> and loads the signed payload from our server.
+  if (-not (Test-Path $WfcGct)) { throw "WFC stage0 code not found: $WfcGct" }
+  $opt = @('--add-lecode', '--add-section', $WfcGct)
+} else {
+  $opt = @('--add-lecode', '--wiimmfi'); if ($Region -gt 0) { $opt += @('--region', "$Region") }
+}
 Copy-Item "$x\sys\main.dol" "$work\main.dol" -Force; Copy-Item "$x\files\rel\StaticR.rel" "$gen\rel\StaticR.rel" -Force
 Run wstrt.exe (@('patch', "$work\main.dol", "$gen\rel\StaticR.rel") + $opt + @('-q')) | Out-Null
 # 'Unlock Everything Without Save' (PAL 0x80549974 = li r3,1, the same patch Pulsar ships): the unlock check
