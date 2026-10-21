@@ -98,6 +98,19 @@ foreach ($t in $ct) {
   Run wszst.exe @('compress', '--szs', "$cache\$($t.ct).wbz", '--dest', "$gen\Race\Course\$($t.slotfile)", '-o', '-q') | Out-Null
 }
 
+# 4b. Never leave a track slot empty: picking an empty slot freezes the game (online too, for everyone in the
+#     room). A custom track that is not built here and not in the pack yet uses, for now, the original track with
+#     the same property (LE-CODE slot of each original track, see `wlect dump`).
+$propSlot = @{ T11 = 0x08; T12 = 0x01; T13 = 0x02; T14 = 0x04; T21 = 0x00; T22 = 0x05; T23 = 0x06; T24 = 0x07
+  T31 = 0x09; T32 = 0x0f; T33 = 0x0b; T34 = 0x03; T41 = 0x0e; T42 = 0x0a; T43 = 0x0c; T44 = 0x0d
+  T51 = 0x10; T52 = 0x14; T53 = 0x19; T54 = 0x1a; T61 = 0x1b; T62 = 0x1f; T63 = 0x17; T64 = 0x12
+  T71 = 0x15; T72 = 0x1e; T73 = 0x1d; T74 = 0x11; T81 = 0x18; T82 = 0x16; T83 = 0x13; T84 = 0x1c }
+$standIn = @(foreach ($t in $list) {
+  if ((Test-Path "$gen\Race\Course\$($t.slotfile)") -or (Test-Path "$pack\Kartaclysm\Race\Course\$($t.slotfile)")) { continue }
+  Copy-Item ("$gen\Race\Course\{0:x3}.szs" -f $propSlot[$t.prop]) "$gen\Race\Course\$($t.slotfile)"; $t.name
+})
+if ($standIn.Count) { Write-Warning ("{0} tracks are not in this pack yet and use an original track for now: {1}" -f $standIn.Count, ($standIn -join ', ')) }
+
 # 5. Menus: LE-CODE cup scrolling, cup icons with our cup names, track names
 Say 84 'Building menus and cup icons'
 # The 8 original cups get the real Mario Kart icons that Wiimm's tools carry (slots 0-9 of cup-icons.png are placeholders)

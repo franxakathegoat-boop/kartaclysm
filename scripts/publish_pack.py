@@ -6,11 +6,13 @@ import hashlib, json, os, shutil, subprocess, sys, tempfile
 REPO = "franxakathegoat-boop/kartaclysm"; TAG = "pack"
 root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pack")
 args = [a for a in sys.argv[1:] if a != "--force"]; ver = args[0]
-# refuse to publish a pack that cannot work (--force skips this): every hosted (non-CT) track must be in
-# pack/Kartaclysm/Race/Course, and the lecode-*.bin cups must match kartaclysm-ctdef.txt
-problems = [f"missing hosted track pack/Kartaclysm/Race/Course/{t['slotfile']} ({t['name']})"
-            for t in json.load(open(os.path.join(root, "build", "tracks.json")))
-            if not t.get("ct") and not os.path.exists(os.path.join(root, "Kartaclysm", "Race", "Course", t["slotfile"]))]
+# refuse to publish a pack that cannot work (--force skips this): the lecode-*.bin cups must match
+# kartaclysm-ctdef.txt. Hosted (non-CT) tracks missing from pack/Kartaclysm/Race/Course are only reported:
+# prepare.ps1 puts the original track with the same property in their slots.
+missing = [t["name"] for t in json.load(open(os.path.join(root, "build", "tracks.json")))
+           if not t.get("ct") and not os.path.exists(os.path.join(root, "Kartaclysm", "Race", "Course", t["slotfile"]))]
+if missing: print(f"note: {len(missing)} hosted tracks are not in pack/Kartaclysm/Race/Course and play as original tracks: " + ", ".join(missing))
+problems = []
 if shutil.which("wlect"):
     for reg in ("PAL", "USA", "JAP", "KOR"):
         b = os.path.join(root, "Kartaclysm", "rel", f"lecode-{reg}.bin")
