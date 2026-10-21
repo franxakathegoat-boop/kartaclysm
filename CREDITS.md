@@ -21,7 +21,7 @@ Users can add their own backgrounds in `%APPDATA%\Kartaclysm\backgrounds` (Setti
 
 ## Cup icons (pack/build/cup-icons.png)
 
-Made for Kartaclysm. The 34 custom-cup emblems are original procedural art drawn by assets-src/cups/emblems.py (no Nintendo or Retro Rewind files, no text). The 10 original-cup slots are kept from cup-icons-v1.png, whose symbols are from Google's **Material Symbols** (Apache License 2.0, https://github.com/google/material-design-icons). Retro Rewind's cup icons inspired the idea of an illustrated emblem on every cup, but none of their files are used.
+Made for Kartaclysm. The 34 custom-cup icons (v3, one cartoon object per cup) are original procedural art drawn by assets-src/cups/items.py (built on emblems.py) (no Nintendo or Retro Rewind files, no text). The 10 original-cup slots are kept from cup-icons-v1.png, whose symbols are from Google's **Material Symbols** (Apache License 2.0, https://github.com/google/material-design-icons). Retro Rewind's cup icons inspired the idea of an illustrated emblem on every cup, but none of their files are used.
 
 ## Title screen and music
 
