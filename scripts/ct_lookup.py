@@ -17,6 +17,11 @@ if '--probe' in sys.argv:
         except Exception as e: print(url, '->', repr(e)[:160])
         time.sleep(2)
     sys.exit()
+if '--check' in sys.argv:  # known CT-archive tracks: does the wiki link their IDs?
+    for title, cid in (('SNES Mario Circuit 1 (ZPL)', 15416), ('GBA Shy Guy Beach (Saiveeon)', 9126), ('N64 Kalimari Desert (Sniki)', 0)):
+        h = get('https://mkwiiki.org/wiki/' + urllib.parse.quote(title.replace(' ', '_'))); time.sleep(1.5)
+        print(title, 'expected', cid, '| page has id:', str(cid) in h if cid else '-', '| wiimm mentions:', [h[max(0, m.start()-80):m.start()+80].replace(chr(10), ' ') for m in re.finditer('wiimm', h)][:4])
+    sys.exit()
 if '--discover' in sys.argv:
     h = get('https://ct.wiimm.de/')
     print('FORMS:', re.findall(r'(?s)<form.*?</form>', h)[:3])
