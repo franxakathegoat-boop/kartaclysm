@@ -1,4 +1,4 @@
-# Kartaclysm first-run builder. Runs on the player's PC and builds every file that is derived
+﻿# Kartaclysm first-run builder. Runs on the player's PC and builds every file that is derived
 # from the player's own Mario Kart Wii copy. Nothing from the game is ever uploaded or shipped.
 param([Parameter(Mandatory)][string]$Game, [string]$Root = "$env:APPDATA\Kartaclysm", [int]$Region = 0)
 $ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue'
@@ -123,6 +123,17 @@ foreach ($orig in Get-ChildItem "$x\files\Scene\UI" -Filter 'Title*.szs') {
     if ($size) { Add-Type -AssemblyName System.Drawing; $w,$h = $size.Split('x'); $im = [Drawing.Image]::FromFile($srcPng); $bm = New-Object Drawing.Bitmap $im, ([int]$w), ([int]$h); $im.Dispose(); $srcPng = "$td\$png-$size.png"; $bm.Save($srcPng); $bm.Dispose() }
     Run wimgt.exe @('encode', $srcPng, '-x', "TPL.$fmt", '-d', $tpl.FullName, '-o', '-q') | Out-Null; $hit = $true
   }
+  # Full-screen title: the art bleeds 120 units past every edge (assets-src/title/title.py), so grow the
+  # 832x140 logo strip to 832x380 and the 832x316 picture to 832x556 (centered, so the animation still lines up)
+  if ($hit) { foreach ($ly in Get-ChildItem $td -Recurse -Filter '*.brlyt') {
+    $lb = [IO.File]::ReadAllBytes($ly.FullName); $chg = $false
+    for ($i = 0; $i -lt $lb.Length - 0x4c; $i++) {
+      if ($lb[$i] -ne 0x70 -or $lb[$i+1] -ne 0x69 -or $lb[$i+2] -ne 0x63 -or $lb[$i+3] -ne 0x31) { continue }
+      $wd = [BitConverter]::ToString($lb, $i+0x44, 8)
+      if ($wd -eq '44-50-00-00-43-0C-00-00') { $lb[$i+0x48]=0x43; $lb[$i+0x49]=0xBE; $chg = $true }
+      elseif ($wd -eq '44-50-00-00-43-9E-00-00') { $lb[$i+0x48]=0x44; $lb[$i+0x49]=0x0B; $chg = $true }
+    }
+    if ($chg) { [IO.File]::WriteAllBytes($ly.FullName, $lb) } } }
   if ($hit) { Get-ChildItem $td -Filter '*.png' | Remove-Item; Run wszst.exe @('create', $td, '-d', $ts.FullName, '-o', '-q') | Out-Null }
   Remove-Item $td -Recurse -Force
 }
