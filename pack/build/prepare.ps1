@@ -1,8 +1,12 @@
 ﻿# Kartaclysm first-run builder. Runs on the player's PC and builds every file that is derived
 # from the player's own Mario Kart Wii copy. Nothing from the game is ever uploaded or shipped.
-param([Parameter(Mandatory)][string]$Game, [string]$Root = "$env:APPDATA\Kartaclysm", [int]$Region = 0)
+param([Parameter(Mandatory)][string]$Game, [string]$Root = "$env:APPDATA\Kartaclysm", [int]$Region = 0, [string]$Wfc = '')
 $ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue'
 [Net.ServicePointManager]::SecurityProtocol = 'Tls12'
+# Online server: Kartaclysm's own server (pack.json "wfc_domain") or, when that is empty, Wiimmfi. Read from the
+# manifest the launcher just downloaded, so launchers that do not pass -Wfc build the right game too.
+if (-not $Wfc) { try { $Wfc = [string](Get-Content "$Root\manifest.json" -Raw | ConvertFrom-Json).wfc_domain } catch { $Wfc = '' } }
+if ($Wfc -and $Wfc -notmatch '^[a-z0-9.-]{1,16}$') { throw "Invalid server domain in the pack: $Wfc" }
 function Say($p, $m) { Write-Output ("PROGRESS {0} {1}" -f $p, $m) }
 $pack = "$Root\pack"; $gen = "$Root\gen"; $tools = "$Root\tools"; $work = "$Root\work"
 $szsZip = 'https://szs.wiimm.de/download/szs-v2.42a-r8989-cygwin64.zip'
@@ -138,10 +142,24 @@ foreach ($orig in Get-ChildItem "$x\files\Scene\UI" -Filter 'Title*.szs') {
   Remove-Item $td -Recurse -Force
 }
 
-# 6. main.dol (LE-CODE starter, Wiimmfi) + StaticR.rel (Wiimmfi + Kartaclysm region)
+# 6. main.dol (LE-CODE starter + online patch) + StaticR.rel + LE-CODE binary
 Say 90 'Patching game code'
-# Wiimmfi always (Nintendo WFC is gone); own Kartaclysm region once Wiimm assigns it.
-$opt = @('--add-lecode', '--wiimmfi'); if ($Region -gt 0) { $opt += @('--region', "$Region") }
+$opt = @('--add-lecode')
+Copy-Item "$pack\Kartaclysm\rel\lecode-$reg.bin" "$gen\rel\" -Force
+if ($Wfc) {
+  # Own server (WiiLink WFC): the stage0 patch for this region, built by the server itself. A cached copy
+  # keeps rebuilds working while the server is down.
+  $s0name = "RMC$($id.Substring(3,1))D00.txt"; $s0 = "$cache\wfc-$Wfc-$s0name"
+  try { Invoke-WebRequest "https://$Wfc/client/$s0name" -OutFile "$s0.part" -UseBasicParsing; Move-Item "$s0.part" $s0 -Force }
+  catch { if (-not (Test-Path $s0)) { throw "Could not download the online patch from $Wfc (server down?): $($_.Exception.Message)" } }
+  if ([string](Get-Content $s0 -Raw) -notmatch '^\s*([0-9A-Fa-f]{8}\s+[0-9A-Fa-f]{8}\s*)+$') { Remove-Item $s0; throw "The online patch from $Wfc is not a Gecko code list" }
+  # every player has the same tracks on our server, so LE-CODE's Worldwide button is turned on
+  Set-Content "$work\worldwide.lpar" "#LE-LPAR`r`n[LECODE-PARAMETERS]`r`nBT-WORLDWIDE`t= LE`$ENABLE`r`nVS-WORLDWIDE`t= LE`$ENABLE" -Encoding ASCII
+  Run wlect.exe @('patch', "$gen\rel\lecode-$reg.bin", '--lpar', "$work\worldwide.lpar", '-o', '-q') | Out-Null
+} else {
+  # Wiimmfi (Nintendo WFC is gone); own Kartaclysm region once Wiimm assigns it
+  $opt += '--wiimmfi'; if ($Region -gt 0) { $opt += @('--region', "$Region") }
+}
 Copy-Item "$x\sys\main.dol" "$work\main.dol" -Force; Copy-Item "$x\files\rel\StaticR.rel" "$gen\rel\StaticR.rel" -Force
 Run wstrt.exe (@('patch', "$work\main.dol", "$gen\rel\StaticR.rel") + $opt + @('-q')) | Out-Null
 # 'Unlock Everything Without Save' (PAL 0x80549974 = li r3,1, the same patch Pulsar ships): the unlock check
@@ -175,8 +193,49 @@ public static class DolDiff {
       sb.AppendFormat("    <memory offset=\"0x{0:X8}\" value=\"{1}\" />\n", keys[i], v); i = j + 1; }
     return sb.ToString();
   }
+  static int Off(byte[] d, uint addr) {
+    for (int i = 0; i < 18; i++) { uint off = U(d, i*4), a = U(d, 0x48 + i*4), size = U(d, 0x90 + i*4);
+      if (size > 0 && addr >= a && addr - a < size) return (int)(off + addr - a); }
+    throw new Exception("Online patch address 0x" + addr.ToString("X8") + " is not in main.dol");
+  }
+  // Own server: write the WiiLink WFC stage0 Gecko codes into main.dol once (like WiiLink's Riivolution patches)
+  // instead of running them with a code handler. Stage0 uses 04 (write), 06 (string), C6 (branch),
+  // 22 (if not equal) and E2 (endif); anything else is refused. Every write must land on bytes that the
+  // LE-CODE patch left as in the player's original main.dol.
+  public static void ApplyGecko(byte[] orig, byte[] dol, string codes) {
+    var w = new List<uint>();
+    foreach (var t in codes.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)) w.Add(Convert.ToUInt32(t, 16));
+    var skip = new Stack<bool>(); var mine = new Dictionary<uint, bool>();
+    for (int i = 0; i + 1 < w.Count; ) {
+      uint a = w[i], v = w[i+1], type = a >> 24, addr = 0x80000000 | (a & 0x01FFFFFF); i += 2;
+      bool on = !skip.Contains(true); byte[] data;
+      if (type == 0x04) data = new[] { (byte)(v >> 24), (byte)(v >> 16), (byte)(v >> 8), (byte)v };
+      else if (type == 0x06) {
+        data = new byte[v]; for (int k = 0; k < v; k++) data[k] = (byte)(w[i + k / 4] >> (24 - 8 * (k % 4)));
+        i += (int)((v + 7) / 8 * 2);
+      }
+      else if (type == 0xC6) { uint b = 0x48000000 | ((v - addr) & 0x03FFFFFC); data = new[] { (byte)(b >> 24), (byte)(b >> 16), (byte)(b >> 8), (byte)b }; }
+      else if (type == 0x22) {
+        if ((a & 1) != 0 && skip.Count > 0) skip.Pop();
+        addr &= 0xFFFFFFFE; int o = Off(dol, addr);
+        skip.Push(!on || U(dol, o) == v); continue;
+      }
+      else if (type == 0xE2 && v == 0) { for (uint n = a & 0xFF; n > 0 && skip.Count > 0; n--) skip.Pop(); continue; }
+      else throw new Exception("Unsupported code in the online patch: " + a.ToString("X8") + " " + v.ToString("X8"));
+      if (!on) continue;
+      for (int k = 0; k < data.Length; k++) {
+        uint m = addr + (uint)k; int fo = Off(dol, m);
+        if (!mine.ContainsKey(m) && dol[fo] != orig[Off(orig, m)]) throw new Exception("The online patch conflicts with LE-CODE at 0x" + m.ToString("X8"));
+        dol[fo] = data[k]; mine[m] = true;
+      }
+    }
+  }
 }
 '@
+if ($Wfc) {
+  $md = [IO.File]::ReadAllBytes("$work\main.dol")
+  [DolDiff]::ApplyGecko([IO.File]::ReadAllBytes("$x\sys\main.dol"), $md, (Get-Content $s0 -Raw)); [IO.File]::WriteAllBytes("$work\main.dol", $md)
+}
 $mem = [DolDiff]::Patches([IO.File]::ReadAllBytes("$x\sys\main.dol"), [IO.File]::ReadAllBytes("$work\main.dol"))
 
 # 7. Riivolution XML (root = SD card or Dolphin root folder; everything lives in /Kartaclysm)
@@ -195,7 +254,7 @@ $xml = @"
     <folder external="/pack/Kartaclysm/Race/Course" disc="/Race/Course" create="true"/>
     <folder external="/gen/Scene/UI" disc="/Scene/UI"/>
     <file external="/gen/rel/StaticR.rel" disc="/rel/StaticR.rel"/>
-    <file external="/pack/Kartaclysm/rel/lecode-$reg.bin" disc="/rel/lecode-$reg.bin" create="true"/>
+    <file external="/gen/rel/lecode-$reg.bin" disc="/rel/lecode-$reg.bin" create="true"/>
 $mem  </patch>
 </wiidisc>
 "@
@@ -209,9 +268,9 @@ Copy-Item "$gen\Race\Course\*" "$x\files\Race\Course\" -Force
 if (Test-Path "$pack\Kartaclysm\Race\Course") { Copy-Item "$pack\Kartaclysm\Race\Course\*" "$x\files\Race\Course\" -Force }
 Copy-Item "$gen\Scene\UI\*" "$x\files\Scene\UI\" -Force
 Copy-Item "$gen\rel\StaticR.rel" "$x\files\rel\StaticR.rel" -Force
-Copy-Item "$pack\Kartaclysm\rel\lecode-$reg.bin" "$x\files\rel\" -Force
+Copy-Item "$gen\rel\lecode-$reg.bin" "$x\files\rel\" -Force
 Copy-Item "$work\main.dol" "$x\sys\main.dol" -Force
 Run wit.exe @('copy', $x, "$gen\Kartaclysm.wbfs", '--wbfs', '--id', '....KC', '--name', 'Kartaclysm', '-o', '-q') | Out-Null
-@{ game = $id; region = $Region; pack = (Get-Content "$pack\build\stamp.txt" -Raw).Trim(); built = (Get-Date).ToString('s') } | ConvertTo-Json | Set-Content "$gen\stamp.json"
+@{ game = $id; region = $Region; wfc = $Wfc; pack = (Get-Content "$pack\build\stamp.txt" -Raw).Trim(); built = (Get-Date).ToString('s') } | ConvertTo-Json | Set-Content "$gen\stamp.json"
 Remove-Item $work -Recurse -Force
 Say 100 'Ready'

@@ -27,8 +27,16 @@ public partial class MainForm {
     new SvcStatus { Name = "PACK SERVER", Host = "github.com", Port = 443, Desc = "Kartaclysm updates (GitHub Releases)" },
   };
   bool checking = false;
+  // the login/rooms cards follow the pack's online server: Kartaclysm's own (pack.json wfc_domain) or Wiimmfi
+  void SyncServices() {
+    var d = WfcDomain;
+    var want = d.Length > 0
+      ? new[] { new SvcStatus { Name = "KARTACLYSM LOGIN", Host = "nas." + d, Port = 80, Desc = "Kartaclysm sign-in server (nas)" }, new SvcStatus { Name = "KARTACLYSM ROOMS", Host = "gpcm.gs." + d, Port = 29900, Desc = "Kartaclysm matchmaking (gpcm)" } }
+      : new[] { new SvcStatus { Name = "WIIMMFI LOGIN", Host = "naswii.wiimmfi.de", Port = 443, Desc = "Wiimmfi sign-in server (nas)" }, new SvcStatus { Name = "WIIMMFI ROOMS", Host = "gpcm.gs.wiimmfi.de", Port = 29900, Desc = "Wiimmfi matchmaking (gpcm)" } };
+    for (int i = 0; i < want.Length; i++) if (services[i].Host != want[i].Host) services[i] = want[i];
+  }
   async Task CheckOnline() {
-    if (checking) return; checking = true; Invalidate();
+    if (checking) return; checking = true; SyncServices(); Invalidate();
     try {
       await Task.WhenAll(services.Select(async sv => {
         sv.State = 0; sv.Detail = "Checking…";
@@ -48,6 +56,8 @@ public partial class MainForm {
     } finally { checking = false; Invalidate(); }
   }
   int WiimmfiRegion => lastManifest?.wiimmfi_region ?? 0;
+  string WfcDomain => lastManifest?.wfc_domain ?? "";
+  bool OwnServer => WfcDomain.Length > 0;
   Manifest lastManifest = LoadCachedManifest();
   static Manifest LoadCachedManifest() { try { return JsonSerializer.Deserialize<Manifest>(File.ReadAllText(Path.Combine(Settings.DataDir, "manifest.json"))); } catch { return null; } }
 
@@ -157,8 +167,9 @@ public partial class MainForm {
     try {
       if (!EnsurePaths()) { SetStatus("Setup cancelled"); return; }
       var m = await UpdateAndPrepare();
-      // Wiimmfi needs Dolphin's Wii certificates: guide the player once (offline play still works without them)
-      if (!HasWiiCerts() && !s.CertGuideShown) { s.CertGuideShown = true; s.Save(); if (!ShowCertGuide(true)) { SetStatus("Online setup: finish it in Dolphin, then press PLAY"); return; } }
+      // Wiimmfi needs Dolphin's Wii certificates: guide the player once (offline play still works without them).
+      // Kartaclysm's own server signs in over plain HTTP, so it needs no certificates.
+      if (!OwnServer && !HasWiiCerts() && !s.CertGuideShown) { s.CertGuideShown = true; s.Save(); if (!ShowCertGuide(true)) { SetStatus("Online setup: finish it in Dolphin, then press PLAY"); return; } }
       Launch(m);
     } catch (Exception ex) { SetStatus("Setup failed - see the message"); showBar = false; MessageBox.Show(this, ex.Message, "Kartaclysm"); }
     finally { busy = false; Invalidate(); }

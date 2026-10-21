@@ -42,7 +42,7 @@ public partial class MainForm {
     y += 14;
     float cx = X0;
     Chip(g, cx, y, "136 TRACKS", Cyan, out var w1); cx += w1 + 10;
-    Chip(g, cx, y, "33 CUPS", Magenta, out var w2); cx += w2 + 10;
+    Chip(g, cx, y, "34 CUPS", Magenta, out var w2); cx += w2 + 10;
     Chip(g, cx, y, s.Mode == "sd" ? "REAL WII · USB" : s.Mode == "native" ? "NATIVE · WIICOMPILED" : "DOLPHIN", Ok, out _);
     y += 58;
     bool sd = s.Mode == "sd";
@@ -176,6 +176,7 @@ public partial class MainForm {
 
   // ======================= UPDATES =======================
   static readonly (string ver, string date, string kind, string[] items)[] Changelog = {
+    ("LAUNCHER 1.11.0", "OCT 21, 2026", "MAJOR", new[] { "Ready for Kartaclysm's own online server: Worldwide and friend rooms for every region (PAL, USA, Japan, Korea), Dolphin and real Wii", "Online page checks the Kartaclysm servers when the pack uses them", "No Wii certificate setup needed for the Kartaclysm server", "Fixed: the home page said 33 cups" }),
     ("LAUNCHER 1.10.0", "OCT 21, 2026", "UPDATE", new[] { "New launcher music: Stalemate by KzX (Kayoszx), from Newgrounds, used with the author's permission", "Music on/off toggle still in Settings", "Music credit added to About & Credits" }),
     ("LAUNCHER 1.9.0", "OCT 21, 2026", "UPDATE", new[] { "Online setup check: tells you if Dolphin is missing the Wii network certificates Wiimmfi needs", "One-click guided fix in English and Italian: Kartaclysm opens Dolphin with your game listed, then right-click it → Perform System Update (from your own disc)", "Note about Wiimmfi error 23899 (new console, wait 7 days) on the first connection", "Custom cups in Time Trials, readable cup icons, fixed title logo (packs 1.2.3-1.2.6)" }),
     ("LAUNCHER 1.8.0", "OCT 20, 2026", "MAJOR", new[] { "Original Kartaclysm theme music in the launcher (mute it in Settings)", "Kartaclysm title screen in the game", "NATIVE PC mode is fully automatic: PLAY downloads WiiCompiled, builds Kartaclysm from your own game and starts it", "Progress bar during the native build, errors saved to native-error.log", "Native mode uses its own portable settings, so a Retro Rewind WiiCompiled install isn't touched" }),
@@ -215,7 +216,8 @@ public partial class MainForm {
 
   // ======================= ONLINE =======================
   void DrawOnline(Graphics g) {
-    Header(g, "NETWORK", "ONLINE", "Live check of the Wiimmfi game servers from your PC.");
+    bool own = OwnServer;
+    Header(g, "NETWORK", "ONLINE", own ? "Live check of the Kartaclysm game servers from your PC." : "Live check of the Wiimmfi game servers from your PC.");
     GhostButton(g, new RectangleF(XR - 150, 70, 150, 40), "recheck", checking ? "CHECKING" : "RE-CHECK", "refresh", () => _ = CheckOnline(), 13);
     float cw = (XR - X0 - 2 * 18) / 3, y = 172;
     for (int i = 0; i < services.Count; i++) {
@@ -236,11 +238,13 @@ public partial class MainForm {
     Spaced(g, "PLAYING FROM ITALY?", F(fBold, 16), TextC, ir.X + 22, ir.Y + 20, 2);
     Txt(g, "If online won't connect, try these in order:", F(fMed, 14), Muted, ir.X + 22, ir.Y + 48);
     string[] tips = {
-      "Turn off any VPN, proxy or iCloud Private Relay — the servers block them.",
+      own ? "Turn off any VPN, proxy or iCloud Private Relay." : "Turn off any VPN, proxy or iCloud Private Relay — the servers block them.",
       "Stuck on “Connecting…”? Set your DNS to Cloudflare 1.1.1.1 or Google 8.8.8.8.",
-      "Use a clean game file (Kartaclysm patches it for Wiimmfi itself) and turn off RetroAchievements in Dolphin.",
+      own ? "Use a clean game file (Kartaclysm patches it for its server itself) and turn off RetroAchievements in Dolphin."
+          : "Use a clean game file (Kartaclysm patches it for Wiimmfi itself) and turn off RetroAchievements in Dolphin.",
       "Real Wii: use 2.4 GHz Wi-Fi with WPA2 (AES), channel 11 or lower.",
-      "Still blocked? Ask on the Wiimmfi Discord / forum — the team can check your connection.",
+      own ? "Still blocked? Report it on the Kartaclysm GitHub (Issues) with a screenshot of this page."
+          : "Still blocked? Ask on the Wiimmfi Discord / forum — the team can check your connection.",
     };
     float ty = ir.Y + 80;
     for (int i = 0; i < tips.Length; i++) {
@@ -255,13 +259,17 @@ public partial class MainForm {
     Glass(g, nr2, 14, 150);
     Spaced(g, "KARTACLYSM ROOMS", F(fBold, 14), TextC, nr2.X + 22, nr2.Y + 20, 2);
     float yy = nr2.Y + 50; bool reg = WiimmfiRegion > 0;
-    var txt = reg ? $"Kartaclysm races on Wiimmfi in its own region ({WiimmfiRegion}): you only meet other Kartaclysm players, on the same 136 tracks."
+    var txt = own ? $"Kartaclysm races on its own server ({WfcDomain}): Worldwide and friend rooms with only Kartaclysm players, on the same 136 tracks, from every region."
+            : reg ? $"Kartaclysm races on Wiimmfi in its own region ({WiimmfiRegion}): you only meet other Kartaclysm players, on the same 136 tracks."
                   : "Kartaclysm will race on Wiimmfi in its own private region, so you only meet other Kartaclysm players. Online opens as soon as Wiimm assigns the region; until then play Grand Prix, VS and Time Trials offline.";
     foreach (var l in Wrap(g, txt, F(fMed, 14), nr2.Width - 44)) { Txt(g, l, F(fMed, 14), Muted, nr2.X + 22, yy); yy += 21; }
     yy += 14;
-    Chip(g, nr2.X + 22, yy, reg ? $"REGION {WiimmfiRegion} · ONLINE" : "REGION PENDING", reg ? Ok : Warn, out _);
+    Chip(g, nr2.X + 22, yy, own ? "OWN SERVER · ONLINE" : reg ? $"REGION {WiimmfiRegion} · ONLINE" : "REGION PENDING", own || reg ? Ok : Warn, out _);
     yy += 40;
-    if (s.Mode == "dolphin") {
+    if (s.Mode == "dolphin" && own) {
+      Spaced(g, "DOLPHIN ONLINE SETUP", F(fBold, 13), Ok, nr2.X + 22, yy, 2); yy += 26;
+      foreach (var l in Wrap(g, "Nothing to set up: the Kartaclysm server needs no Wii certificates. / Niente da configurare: il server Kartaclysm non richiede certificati Wii.", F(fMed, 13), nr2.Width - 44)) { Txt(g, l, F(fMed, 13), Muted, nr2.X + 22, yy); yy += 19; }
+    } else if (s.Mode == "dolphin") {
       bool certs = HasWiiCerts();
       Spaced(g, "DOLPHIN ONLINE SETUP", F(fBold, 13), certs ? Ok : Warn, nr2.X + 22, yy, 2); yy += 26;
       var st = certs ? "Wii certificates found. First connection: error 23899 (wait 7 days) is normal. / Certificati trovati. Primo accesso: l'errore 23899 (attendi 7 giorni) è normale."

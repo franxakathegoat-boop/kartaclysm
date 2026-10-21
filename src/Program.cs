@@ -41,6 +41,7 @@ public class Manifest {
   public List<RiiOption> options { get; set; } = new();
   public string prepare { get; set; }
   public int wiimmfi_region { get; set; }
+  public string wfc_domain { get; set; }   // Kartaclysm's own online server; empty = Wiimmfi
   public string min_launcher { get; set; }
 }
 public class RiiOption { public string section { get; set; } public string option { get; set; } public int choice { get; set; } }
