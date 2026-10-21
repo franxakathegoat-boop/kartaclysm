@@ -13,7 +13,7 @@ using System.Windows.Forms;
 
 namespace Kartaclysm {
 public partial class MainForm : Form {
-  public const string LauncherVersion = "1.8.0";
+  public const string LauncherVersion = "1.9.0";
   public const int W = 1200, H = 720, SIDE = 236;
   // theme
   static readonly Color Cyan = Color.FromArgb(0, 229, 255), Blue = Color.FromArgb(60, 110, 255), Magenta = Color.FromArgb(255, 46, 147);

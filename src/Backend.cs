@@ -157,6 +157,8 @@ public partial class MainForm {
     try {
       if (!EnsurePaths()) { SetStatus("Setup cancelled"); return; }
       var m = await UpdateAndPrepare();
+      // Wiimmfi needs Dolphin's Wii certificates: guide the player once (offline play still works without them)
+      if (!HasWiiCerts() && !s.CertGuideShown) { s.CertGuideShown = true; s.Save(); if (!ShowCertGuide(true)) { SetStatus("Online setup: finish it in Dolphin, then press PLAY"); return; } }
       Launch(m);
     } catch (Exception ex) { SetStatus("Setup failed - see the message"); showBar = false; MessageBox.Show(this, ex.Message, "Kartaclysm"); }
     finally { busy = false; Invalidate(); }

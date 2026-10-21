@@ -176,6 +176,7 @@ public partial class MainForm {
 
   // ======================= UPDATES =======================
   static readonly (string ver, string date, string kind, string[] items)[] Changelog = {
+    ("LAUNCHER 1.9.0", "OCT 21, 2026", "UPDATE", new[] { "Online setup check: tells you if Dolphin is missing the Wii network certificates Wiimmfi needs", "One-click guided fix in English and Italian: Kartaclysm opens Dolphin with your game listed, then right-click it → Perform System Update (from your own disc)", "Note about Wiimmfi error 23899 (new console, wait 7 days) on the first connection", "Custom cups in Time Trials, readable cup icons, fixed title logo (packs 1.2.3-1.2.6)" }),
     ("LAUNCHER 1.8.0", "OCT 20, 2026", "MAJOR", new[] { "Original Kartaclysm theme music in the launcher (mute it in Settings)", "Kartaclysm title screen in the game", "NATIVE PC mode is fully automatic: PLAY downloads WiiCompiled, builds Kartaclysm from your own game and starts it", "Progress bar during the native build, errors saved to native-error.log", "Native mode uses its own portable settings, so a Retro Rewind WiiCompiled install isn't touched" }),
     ("LAUNCHER 1.6.0 + PACK 1.1.0", "OCT 20, 2026", "MAJOR", new[] { "Fixed: PLAY could start plain Mario Kart Wii (old launchers used a Riivolution shortcut that can't run LE-CODE)", "PLAY now always builds/verifies your Kartaclysm game file first, with progress, and shows any error", "Launcher updates itself automatically", "New NATIVE PC play mode for your WiiCompiled Kartaclysm build", "New cup icons with a symbol for every disaster", "New 34th cup (Eruption) - fixes the empty slot/background on the last cup page" }),
     ("PACK 1.0.0", "OCT 20, 2026", "PACK", new[] { "The real Kartaclysm pack: 132 custom tracks in 33 named cups + the 8 original cups (LE-CODE)", "First PLAY builds the game files from YOUR copy on your PC (a few minutes, only once)", "Wiimmfi-ready: own Kartaclysm region as soon as Wiimm assigns it" }),
@@ -258,6 +259,15 @@ public partial class MainForm {
     foreach (var l in Wrap(g, txt, F(fMed, 14), nr2.Width - 44)) { Txt(g, l, F(fMed, 14), Muted, nr2.X + 22, yy); yy += 21; }
     yy += 14;
     Chip(g, nr2.X + 22, yy, reg ? $"REGION {WiimmfiRegion} · ONLINE" : "REGION PENDING", reg ? Ok : Warn, out _);
+    yy += 40;
+    if (s.Mode == "dolphin") {
+      bool certs = HasWiiCerts();
+      Spaced(g, "DOLPHIN ONLINE SETUP", F(fBold, 13), certs ? Ok : Warn, nr2.X + 22, yy, 2); yy += 26;
+      var st = certs ? "Wii certificates found. First connection: error 23899 (wait 7 days) is normal. / Certificati trovati. Primo accesso: l'errore 23899 (attendi 7 giorni) è normale."
+                     : "Missing Wii certificates. In Dolphin: right-click Mario Kart Wii → Perform System Update (Avvia l'aggiornamento di sistema).";
+      foreach (var l in Wrap(g, st, F(fMed, 13), nr2.Width - 44)) { Txt(g, l, F(fMed, 13), Muted, nr2.X + 22, yy); yy += 19; }
+      if (!certs && yy + 44 < nr2.Bottom) GhostButton(g, new RectangleF(nr2.X + 22, yy + 8, Math.Min(260, nr2.Width - 44), 36), "certsetup", "SETUP / CONFIGURA", "online", () => ShowCertGuide(false), 13);
+    }
   }
 
   // ======================= SETTINGS =======================
