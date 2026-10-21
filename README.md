@@ -15,3 +15,7 @@ You need your OWN Mario Kart Wii game file and Dolphin. No Nintendo files are di
 - The other 31 tracks are hosted fan releases. Track sources and authors are listed in [CREDITS.md](CREDITS.md).
 - Real Wii: choose REAL WII · USB in Settings; PLAY copies the WBFS to `wbfs/Kartaclysm [RMCPKC]/` for USB Loader GX or WiiFlow.
 - Online: Wiimmfi, with its own Kartaclysm region once Wiimm assigns one (`wiimmfi_region` in pack.json; 0 = offline).
+
+## Music
+
+Launcher music: **Stalemate by KzX (Kayoszx)**, newgrounds.com/audio/listen/482872 — used with the author's permission ("Go for it, just leave some credit."). Turn it off in Settings.

@@ -176,6 +176,7 @@ public partial class MainForm {
 
   // ======================= UPDATES =======================
   static readonly (string ver, string date, string kind, string[] items)[] Changelog = {
+    ("LAUNCHER 1.10.0", "OCT 21, 2026", "UPDATE", new[] { "New launcher music: Stalemate by KzX (Kayoszx), from Newgrounds, used with the author's permission", "Music on/off toggle still in Settings", "Music credit added to About & Credits" }),
     ("LAUNCHER 1.9.0", "OCT 21, 2026", "UPDATE", new[] { "Online setup check: tells you if Dolphin is missing the Wii network certificates Wiimmfi needs", "One-click guided fix in English and Italian: Kartaclysm opens Dolphin with your game listed, then right-click it → Perform System Update (from your own disc)", "Note about Wiimmfi error 23899 (new console, wait 7 days) on the first connection", "Custom cups in Time Trials, readable cup icons, fixed title logo (packs 1.2.3-1.2.6)" }),
     ("LAUNCHER 1.8.0", "OCT 20, 2026", "MAJOR", new[] { "Original Kartaclysm theme music in the launcher (mute it in Settings)", "Kartaclysm title screen in the game", "NATIVE PC mode is fully automatic: PLAY downloads WiiCompiled, builds Kartaclysm from your own game and starts it", "Progress bar during the native build, errors saved to native-error.log", "Native mode uses its own portable settings, so a Retro Rewind WiiCompiled install isn't touched" }),
     ("LAUNCHER 1.6.0 + PACK 1.1.0", "OCT 20, 2026", "MAJOR", new[] { "Fixed: PLAY could start plain Mario Kart Wii (old launchers used a Riivolution shortcut that can't run LE-CODE)", "PLAY now always builds/verifies your Kartaclysm game file first, with progress, and shows any error", "Launcher updates itself automatically", "New NATIVE PC play mode for your WiiCompiled Kartaclysm build", "New cup icons with a symbol for every disaster", "New 34th cup (Eruption) - fixes the empty slot/background on the last cup page" }),
@@ -333,6 +334,7 @@ public partial class MainForm {
       $"Kartaclysm launcher v{LauncherVersion} · free fan project · not affiliated with Nintendo. You need your own copy of Mario Kart Wii.",
       "Tracks: custom retro ports by the Custom Mario Kart community — every author is credited on the Tracks page.",
       "Screenshots: Custom Mario Kart Wiiki (mkwiiki.org) track previews — N64 Rainbow Road (cpfusion), Tour Athens Dash (ISwearChris), Tour Vancouver Velocity (Iggy Ze Koopa & SeaOfPixels), RMX Choco Island 1 (ZPL), Tour Ninja Hideaway (Iggy Ze Koopa), SNES Donut Plains 1 (Luca).",
+      "Music: Stalemate by KzX (Kayoszx), newgrounds.com/audio/listen/482872 — used with the author's permission.",
       "Fonts: Chakra Petch & Unbounded (SIL Open Font License). Logo and UI: original Kartaclysm artwork.",
     };
     float ay = r4.Y + 50;
