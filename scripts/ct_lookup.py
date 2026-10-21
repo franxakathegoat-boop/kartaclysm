@@ -33,17 +33,21 @@ def links(h): return [(html.unescape(u), text(t).strip()) for u, t in re.findall
 def page(title):
     try: return get(WIKI + '/wiki/' + urllib.parse.quote(title.replace(' ', '_')))
     except Exception as e: return ''
-def ct_ids(h): return sorted({int(i) for i in re.findall(r'ct\.wiimm\.de/(?:i/|d/|\?t=|\?id=)(\d+)', h)})
+def ct_ids(h):  # the wiki links archive entries as ct.wiimm.de/ref/<id>/<distribution> ("Details")
+    ids = {}
+    for i, d in re.findall(r'ct\.wiimm\.de/(?:ref/|i/|d/|\?t=|\?id=)(\d+)(?:/([\w.-]+))?', h): ids.setdefault(int(i), set()).add(d or '?')
+    return {i: sorted(d)[:5] for i, d in sorted(ids.items())}
 for t in json.load(open('pack/build/tracks.json')):
     if t.get('ct'): continue
     names = [a.strip().lower() for a in t['authors'].split(',')]
     main = page(t['name']); time.sleep(1.5)
     subs = sorted({u for u, _ in links(main) if u.startswith('/wiki/' + urllib.parse.quote(t['name'].replace(' ', '_'))) and '(' in u})
     found = []
-    for u in subs:
+    mine = [u for u in subs if any(a in urllib.parse.unquote(u).replace('_', ' ').lower() for a in names)]
+    for u in (mine or subs):
         title = urllib.parse.unquote(u[len('/wiki/'):]).replace('_', ' ')
         h = page(title); time.sleep(1.5)
         body = text(h).lower()
         found.append({'page': title, 'author_match': [a for a in names if a in body], 'ct': ct_ids(h),
-                      'other': sorted({x for x, _ in links(h) if re.search(r'mediafire|drive\.google|mega\.nz|gamebanana|dropbox|github\.com/.+/releases|icedrive', x)})[:6]})
+                      'other': list(dict.fromkeys(x for x, _ in links(h) if re.search(r'mediafire|drive\.google|mega\.nz|gamebanana|dropbox|github\.com/.+/releases|icedrive', x)))[:8]})
     print(json.dumps({'slot': t['slotfile'], 'name': t['name'], 'authors': t['authors'], 'main_page': bool(main), 'main_ct': ct_ids(main), 'versions': found}), flush=True)
