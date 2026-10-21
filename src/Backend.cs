@@ -123,7 +123,10 @@ public partial class MainForm {
       using var d = new FolderBrowserDialog { Description = "Choose the USB drive or SD card your USB loader uses (the drive root, e.g. E:\\)" };
       if (d.ShowDialog(this) != DialogResult.OK) return;
       var root = Path.GetPathRoot(d.SelectedPath);
-      var dest = Path.Combine(root, "wbfs", "Kartaclysm [RMCPKC]", "RMCPKC.wbfs");
+      // the built game keeps the disc's region: RMCPKC, RMCEKC, RMCJKC or RMCKKC (USB loaders match folder and file to it)
+      var id = "RMCPKC";
+      try { var g = JsonDocument.Parse(File.ReadAllText(Path.Combine(GenDir, "stamp.json"))).RootElement.GetProperty("game").GetString(); if (g?.Length >= 4) id = g.Substring(0, 4) + "KC"; } catch { }
+      var dest = Path.Combine(root, "wbfs", $"Kartaclysm [{id}]", id + ".wbfs");
       if (MessageBox.Show(this, $"Copy Kartaclysm (about {new FileInfo(GameImage).Length >> 30} GB) to\n{dest} ?", "Copy to USB / SD", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
       Directory.CreateDirectory(Path.GetDirectoryName(dest));
       SetStatus("Copying the game file...");

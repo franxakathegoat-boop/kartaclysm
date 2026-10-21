@@ -13,7 +13,7 @@ You need your OWN Mario Kart Wii game file and Dolphin. No Nintendo files are di
 - 34 named cups (136 custom tracks) plus the 8 original cups, powered by LE-CODE (build 40).
 - Nothing from the game is shipped. On the first PLAY the launcher runs `pack/build/prepare.ps1` on your PC. It downloads Wiimm's tools, fetches 105 tracks from Wiimm's CT archive (via the Kartaclysm GitHub mirror, with Wiimm's site as fallback), rebuilds them with your own game files, and writes `%APPDATA%\Kartaclysm\gen\Kartaclysm.wbfs` (game ID RMCPKC, so your normal save is untouched). Dolphin then starts that file.
 - The other 31 tracks are hosted fan releases. Track sources and authors are listed in [CREDITS.md](CREDITS.md).
-- Real Wii: choose REAL WII · USB in Settings; PLAY copies the WBFS to `wbfs/Kartaclysm [RMCPKC]/` for USB Loader GX or WiiFlow.
+- Real Wii and Wii U (Wii mode): choose REAL WII · USB in Settings; PLAY copies the WBFS to `wbfs/Kartaclysm [RMC?KC]/` (? = your disc's region: P, E, J or K) for USB Loader GX or WiiFlow.
 - Online: Kartaclysm's own server ([kartaclysm-wfc](https://github.com/franxakathegoat-boop/kartaclysm-wfc), WiiLink WFC based) once `wfc_domain` in pack.json is set: every region (PAL, USA, Japan, Korea), Dolphin and real Wii, Worldwide and friend rooms. PLAY downloads the patch for the player's region from `https://<wfc_domain>/client/` and writes it into the game. With `wfc_domain` empty the game uses Wiimmfi (own region once Wiimm assigns one: `wiimmfi_region`). Native PC mode still uses Wiimmfi.
 
 ## Music
