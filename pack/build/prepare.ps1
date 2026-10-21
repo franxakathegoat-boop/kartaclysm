@@ -100,11 +100,15 @@ foreach ($t in $ct) {
 
 # 5. Menus: LE-CODE cup scrolling, cup icons with our cup names, track names
 Say 84 'Building menus and cup icons'
+# The 8 original cups get the real Mario Kart icons that Wiimm's tools carry (slots 0-9 of cup-icons.png are placeholders)
+$icons = 'cup-icons.png'
+try { Run wimgt.exe @('copy', "$pack\build\cup-icons.png", '-d', "$work\cup-icons.png", '--patch', 'T.L.CP=:CUP-IMAGE=arrows,swapped', '-o', '-q') | Out-Null; $icons = "$work\cup-icons.png" }
+catch { Write-Warning "Original cup icons not added: $($_.Exception.Message)" }
 # Track names go into Common.bmg only (T11 exists only there): Menu.bmg entries would shadow them.
 # LE-COPY puts the player's own original track names into the LE-CODE range; the BMG file path is
 # relative because the '?MID=' condition syntax does not accept 'C:' paths.
 Push-Location "$pack\build"
-try { Run wszst.exe @('patch', "$x\files\Scene\UI\*.szs", '--le-menu', '--cup-icons', 'cup-icons.png', '--links', '--patch-bmg', 'LE-COPY?T11', '--patch-bmg', 'OVERWRITE?T11=tracks.bmg.txt', '-D', "$gen\Scene\UI\", '-o', '-q') | Out-Null } finally { Pop-Location }
+try { Run wszst.exe @('patch', "$x\files\Scene\UI\*.szs", '--le-menu', '--cup-icons', $icons, '--links', '--patch-bmg', 'LE-COPY?T11', '--patch-bmg', 'OVERWRITE?T11=tracks.bmg.txt', '-D', "$gen\Scene\UI\", '-o', '-q') | Out-Null } finally { Pop-Location }
 
 # 5b. Kartaclysm title screen (our own art, pack/build/title) in every Title*.szs that has the title textures
 $tmap = @{ 'tt_title_screen_mario0' = 'title_bg'; 'tt_title_screen_mario0_bokeboke' = 'title_bg_blur'; 'tt_title_screen_title_rogo' = 'title_logo'; 'tt_title_screen_title_rogo_bokeboke' = 'title_logo_blur'; 'tt_title_screen_title_rogo_tm_only' = 'title_logo'

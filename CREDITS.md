@@ -21,7 +21,9 @@ Users can add their own backgrounds in `%APPDATA%\Kartaclysm\backgrounds` (Setti
 
 ## Cup icons (pack/build/cup-icons.png)
 
-Made for Kartaclysm. The 34 custom-cup icons (v3, one cartoon object per cup) are original procedural art drawn by assets-src/cups/items.py (built on emblems.py) (no Nintendo or Retro Rewind files, no text). The 10 original-cup slots are kept from cup-icons-v1.png, whose symbols are from Google's **Material Symbols** (Apache License 2.0, https://github.com/google/material-design-icons). Retro Rewind's cup icons inspired the idea of an illustrated emblem on every cup, but none of their files are used.
+- **The 8 original cups** show Mario Kart Wii's own cup icons. They are not in this repo: Wiimm's SZS Tools carry them and prepare.ps1 adds them on the player's PC (`wimgt ... --patch T.L.CP=:CUP-IMAGE=arrows,swapped`).
+- **The 34 Kartaclysm cups** use 3D emoji from Microsoft's **Fluent Emoji** (MIT License, Copyright (c) Microsoft Corporation, https://github.com/microsoft/fluentui-emoji), one per cup, styled for the cup menu (outline, shadow) by assets-src/cups/icons.py. The source images and the license are in assets-src/cups/fluent/. The native PC pack uses the same icons (kartaclysm-pulsar.zip, Assets/UIAssets.szs, icon_000-033).
+- Placeholders for the 10 original slots (only shown if adding the real icons fails) come from cup-icons-v1.png, whose symbols are from Google's **Material Symbols** (Apache License 2.0, https://github.com/google/material-design-icons).
 
 ## Title screen and music
 
