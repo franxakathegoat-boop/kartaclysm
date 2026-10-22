@@ -176,7 +176,7 @@ public partial class MainForm {
 
   // ======================= UPDATES =======================
   static readonly (string ver, string date, string kind, string[] items)[] Changelog = {
-    ("LAUNCHER 1.11.0", "OCT 21, 2026", "MAJOR", new[] { "Ready for Kartaclysm's own online server: Worldwide and friend rooms for every region (PAL, USA, Japan, Korea), Dolphin and real Wii", "Online page checks the Kartaclysm servers when the pack uses them", "No Wii certificate setup needed for the Kartaclysm server", "New cup icons: the real Mario Kart icons on the 8 original cups, a glossy 3D icon on each of the 34 Kartaclysm cups (also in native mode)", "Fixed: the home page said 33 cups" }),
+    ("LAUNCHER 1.11.0", "OCT 21, 2026", "MAJOR", new[] { "Music volume in Settings (10 steps, default 40%)", "Ready for Kartaclysm's own online server: Worldwide and friend rooms for every region (PAL, USA, Japan, Korea), Dolphin and real Wii", "Online page checks the Kartaclysm servers when the pack uses them", "No Wii certificate setup needed for the Kartaclysm server", "New cup icons: the real Mario Kart icons on the 8 original cups, a glossy 3D icon on each of the 34 Kartaclysm cups (also in native mode)", "Fixed: the home page said 33 cups" }),
     ("LAUNCHER 1.10.0", "OCT 21, 2026", "UPDATE", new[] { "New launcher music: Stalemate by KzX (Kayoszx), from Newgrounds, used with the author's permission", "Music on/off toggle still in Settings", "Music credit added to About & Credits" }),
     ("LAUNCHER 1.9.0", "OCT 21, 2026", "UPDATE", new[] { "Online setup check: tells you if Dolphin is missing the Wii network certificates Wiimmfi needs", "One-click guided fix in English and Italian: Kartaclysm opens Dolphin with your game listed, then right-click it → Perform System Update (from your own disc)", "Note about Wiimmfi error 23899 (new console, wait 7 days) on the first connection", "Custom cups in Time Trials, readable cup icons, fixed title logo (packs 1.2.3-1.2.6)" }),
     ("LAUNCHER 1.8.0", "OCT 20, 2026", "MAJOR", new[] { "Original Kartaclysm theme music in the launcher (mute it in Settings)", "Kartaclysm title screen in the game", "NATIVE PC mode is fully automatic: PLAY downloads WiiCompiled, builds Kartaclysm from your own game and starts it", "Progress bar during the native build, errors saved to native-error.log", "Native mode uses its own portable settings, so a Retro Rewind WiiCompiled install isn't touched" }),
@@ -331,6 +331,15 @@ public partial class MainForm {
     using (var gp = Round(tm, 12)) { if (s.Music) { using var lg = new LinearGradientBrush(new RectangleF(tm.X - 1, tm.Y, tm.Width + 2, tm.Height), Cyan, Blue, 0f); g.FillPath(lg, gp); } else { using var b = new SolidBrush(Color.FromArgb(60, 255, 255, 255)); g.FillPath(b, gp); } }
     using (var b = new SolidBrush(Color.White)) g.FillEllipse(b, s.Music ? tm.Right - 21 : tm.X + 3, tm.Y + 3, 18, 18);
     AddHit(new RectangleF(r3.X + 16, r3.Y + 100, r3.Width - 32, 40), "music", () => { s.Music = !s.Music; s.Save(); UpdateMusic(); });
+    // music volume: 10 bars between the label and the toggle, click one to set 10-100% (click the first again for 0%)
+    float vx = r3.X + 24 + g.MeasureString("Launcher music", F(fBold, 14)).Width + 14, vw = Math.Min(16, (tm.X - 12 - vx) / 10);
+    vx = tm.X - 12 - vw * 10;
+    for (int i = 0; i < 10; i++) {
+      var vb = new RectangleF(vx + i * vw + 2, r3.Y + 126 - (8 + i * 1.4f), vw - 4, 8 + i * 1.4f); int vol = (i + 1) * 10;
+      bool on = s.MusicVolume >= vol, hv = Hover("vol" + i);
+      using (var gp = Round(vb, 2)) using (var b = new SolidBrush(on ? (s.Music ? Cyan : Dim) : Color.FromArgb(hv ? 110 : 45, 255, 255, 255))) g.FillPath(b, gp);
+      AddHit(new RectangleF(vx + i * vw, r3.Y + 102, vw, 36), "vol" + i, () => { s.MusicVolume = s.MusicVolume == vol && vol == 10 ? 0 : vol; s.Save(); UpdateMusic(); });
+    }
     GhostButton(g, new RectangleF(r3.X + 24, r3.Y + 154, (r3.Width - 60) / 2, 40), "openpack", "PACK FOLDER", "folder", () => { Directory.CreateDirectory(Settings.PackDir); Process.Start(new ProcessStartInfo("explorer.exe", Settings.PackDir) { UseShellExecute = true }); }, 12);
     GhostButton(g, new RectangleF(r3.X + 36 + (r3.Width - 60) / 2, r3.Y + 154, (r3.Width - 60) / 2, 40), "openbg", "BACKGROUNDS", "folder", () => { Directory.CreateDirectory(Settings.BackgroundsDir); Process.Start(new ProcessStartInfo("explorer.exe", Settings.BackgroundsDir) { UseShellExecute = true }); }, 12);
     Txt(g, "Add your own screenshots to Backgrounds.", F(fMed, 12), Dim, r3.X + 24, r3.Y + 156);

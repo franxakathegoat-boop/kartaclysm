@@ -21,6 +21,7 @@ public class Settings {
   public string Mode { get; set; } = "dolphin";   // "dolphin", "native" (WiiCompiled) or "sd"
   public bool Intro { get; set; } = true;
   public bool Music { get; set; } = true;
+  public int MusicVolume { get; set; } = 40;   // percent, launcher music only
   public bool CertGuideShown { get; set; }
   public string PreparedFor { get; set; }
   public string WiiCompiledPath { get; set; }

@@ -199,12 +199,23 @@ public partial class MainForm {
   }
 
   // ---------------- launcher music (original Kartaclysm theme, CC0) ----------------
-  System.Media.SoundPlayer music;
+  System.Media.SoundPlayer music; int musicVolume = -1;
   void UpdateMusic() {
     try {
-      if (s.Music && fixedTime == null) { if (music == null) { music = new System.Media.SoundPlayer(GetType().Assembly.GetManifestResourceStream("music.wav")); music.Load(); } music.PlayLooping(); }
+      if (s.Music && s.MusicVolume > 0 && fixedTime == null) {
+        if (music == null || musicVolume != s.MusicVolume) { music?.Stop(); music = new System.Media.SoundPlayer(new MemoryStream(MusicAtVolume(s.MusicVolume))); music.Load(); musicVolume = s.MusicVolume; }
+        music.PlayLooping();
+      }
       else music?.Stop();
     } catch { }
+  }
+  // SoundPlayer has no volume control, so the 16-bit PCM samples of music.wav are scaled before playing
+  byte[] MusicAtVolume(int percent) {
+    using var st = GetType().Assembly.GetManifestResourceStream("music.wav"); using var ms = new MemoryStream(); st.CopyTo(ms);
+    var b = ms.ToArray(); int p = 12;
+    while (p + 8 <= b.Length && !(b[p] == 'd' && b[p + 1] == 'a' && b[p + 2] == 't' && b[p + 3] == 'a')) p += 8 + BitConverter.ToInt32(b, p + 4);
+    for (int i = p + 8; i + 1 < b.Length; i += 2) { var v = (short)(BitConverter.ToInt16(b, i) * percent / 100); b[i] = (byte)v; b[i + 1] = (byte)(v >> 8); }
+    return b;
   }
   void StopMusicForGame() { try { music?.Stop(); } catch { } }
 
