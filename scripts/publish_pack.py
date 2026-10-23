@@ -1,11 +1,28 @@
 #!/usr/bin/env python3
-"""Publish a pack update. Usage: python3 scripts/publish_pack.py 1.0.1
+"""Publish a pack update. Usage: python3 scripts/publish_pack.py 1.0.1 [--force]
 Uploads every file under pack/ to the rolling 'pack' release (only changed ones) + manifest.json.
 NEVER put Nintendo game files in pack/ - only fan-made tracks + riivolution xml."""
-import hashlib, json, os, subprocess, sys
+import hashlib, json, os, shutil, subprocess, sys, tempfile
 REPO = "franxakathegoat-boop/kartaclysm"; TAG = "pack"
 root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pack")
-ver = sys.argv[1]
+args = [a for a in sys.argv[1:] if a != "--force"]; ver = args[0]
+# refuse to publish a pack that cannot work (--force skips this): the lecode-*.bin cups must match
+# kartaclysm-ctdef.txt. Hosted (non-CT) tracks missing from pack/Kartaclysm/Race/Course are only reported:
+# prepare.ps1 puts the original track with the same property in their slots.
+missing = [t["name"] for t in json.load(open(os.path.join(root, "build", "tracks.json")))
+           if not t.get("ct") and not os.path.exists(os.path.join(root, "Kartaclysm", "Race", "Course", t["slotfile"]))]
+if missing: print(f"note: {len(missing)} hosted tracks are not in pack/Kartaclysm/Race/Course and play as original tracks: " + ", ".join(missing))
+problems = []
+if shutil.which("wlect"):
+    for reg in ("PAL", "USA", "JAP", "KOR"):
+        b = os.path.join(root, "Kartaclysm", "rel", f"lecode-{reg}.bin")
+        with tempfile.TemporaryDirectory() as tmp:
+            c = shutil.copy(b, tmp)
+            subprocess.run(["wlect", "patch", c, "--le-define", os.path.join(root, "build", "kartaclysm-ctdef.txt"), "-o", "-q"], check=True)
+            if subprocess.run(["wlect", "bin-diff", "d", b, c], capture_output=True).returncode:
+                problems.append(f"lecode-{reg}.bin is stale: run wlect patch pack/Kartaclysm/rel/lecode-*.bin --le-define pack/build/kartaclysm-ctdef.txt")
+else: print("warning: wlect (Wiimms SZS Tools) not found, LE-CODE binaries not checked against kartaclysm-ctdef.txt")
+if problems and "--force" not in sys.argv: sys.exit("not publishing:\n  " + "\n  ".join(problems))
 # the launcher rebuilds when gen/stamp.json "pack" != manifest version, so the stamp must always match
 open(os.path.join(root, "build", "stamp.txt"), "w").write(ver + "\n")
 def asset(rel): return rel.replace("/", "__")

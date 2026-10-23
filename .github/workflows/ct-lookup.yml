@@ -1,0 +1,14 @@
+# Looks up tracks in Wiimm's CT archive (ct.wiimm.de) from GitHub's network; output is in the job log.
+name: ct-lookup
+on:
+  push:
+    branches: ['claude/**']
+    paths: ['scripts/ct_lookup.py', '.github/workflows/ct-lookup.yml']
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  lookup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/ct_lookup.py

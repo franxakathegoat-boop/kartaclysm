@@ -21,6 +21,7 @@ public class Settings {
   public string Mode { get; set; } = "dolphin";   // "dolphin", "native" (WiiCompiled) or "sd"
   public bool Intro { get; set; } = true;
   public bool Music { get; set; } = true;
+  public int MusicVolume { get; set; } = 40;   // percent, launcher music only
   public bool CertGuideShown { get; set; }
   public string PreparedFor { get; set; }
   public string WiiCompiledPath { get; set; }
@@ -41,6 +42,7 @@ public class Manifest {
   public List<RiiOption> options { get; set; } = new();
   public string prepare { get; set; }
   public int wiimmfi_region { get; set; }
+  public string wfc_domain { get; set; }   // Kartaclysm's own online server; empty = Wiimmfi
   public string min_launcher { get; set; }
 }
 public class RiiOption { public string section { get; set; } public string option { get; set; } public int choice { get; set; } }

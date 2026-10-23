@@ -1,0 +1,14 @@
+name: publish-pack
+# Uploads pack/ to the rolling 'pack' release (scripts/publish_pack.py). Players' launchers update on their next PLAY.
+on:
+  workflow_dispatch:
+    inputs:
+      version: { description: 'Pack version, e.g. 1.2.9', required: true }
+permissions: { contents: write }
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - env: { GH_TOKEN: '${{ github.token }}', VERSION: '${{ inputs.version }}' }
+        run: python3 scripts/publish_pack.py "$VERSION"

@@ -27,8 +27,16 @@ public partial class MainForm {
     new SvcStatus { Name = "PACK SERVER", Host = "github.com", Port = 443, Desc = "Kartaclysm updates (GitHub Releases)" },
   };
   bool checking = false;
+  // the login/rooms cards follow the pack's online server: Kartaclysm's own (pack.json wfc_domain) or Wiimmfi
+  void SyncServices() {
+    var d = WfcDomain;
+    var want = d.Length > 0
+      ? new[] { new SvcStatus { Name = "KARTACLYSM LOGIN", Host = "nas." + d, Port = 80, Desc = "Kartaclysm sign-in server (nas)" }, new SvcStatus { Name = "KARTACLYSM ROOMS", Host = "gpcm.gs." + d, Port = 29900, Desc = "Kartaclysm matchmaking (gpcm)" } }
+      : new[] { new SvcStatus { Name = "WIIMMFI LOGIN", Host = "naswii.wiimmfi.de", Port = 443, Desc = "Wiimmfi sign-in server (nas)" }, new SvcStatus { Name = "WIIMMFI ROOMS", Host = "gpcm.gs.wiimmfi.de", Port = 29900, Desc = "Wiimmfi matchmaking (gpcm)" } };
+    for (int i = 0; i < want.Length; i++) if (services[i].Host != want[i].Host) services[i] = want[i];
+  }
   async Task CheckOnline() {
-    if (checking) return; checking = true; Invalidate();
+    if (checking) return; checking = true; SyncServices(); Invalidate();
     try {
       await Task.WhenAll(services.Select(async sv => {
         sv.State = 0; sv.Detail = "Checking…";
@@ -48,6 +56,8 @@ public partial class MainForm {
     } finally { checking = false; Invalidate(); }
   }
   int WiimmfiRegion => lastManifest?.wiimmfi_region ?? 0;
+  string WfcDomain => lastManifest?.wfc_domain ?? "";
+  bool OwnServer => WfcDomain.Length > 0;
   Manifest lastManifest = LoadCachedManifest();
   static Manifest LoadCachedManifest() { try { return JsonSerializer.Deserialize<Manifest>(File.ReadAllText(Path.Combine(Settings.DataDir, "manifest.json"))); } catch { return null; } }
 
@@ -113,7 +123,10 @@ public partial class MainForm {
       using var d = new FolderBrowserDialog { Description = "Choose the USB drive or SD card your USB loader uses (the drive root, e.g. E:\\)" };
       if (d.ShowDialog(this) != DialogResult.OK) return;
       var root = Path.GetPathRoot(d.SelectedPath);
-      var dest = Path.Combine(root, "wbfs", "Kartaclysm [RMCPKC]", "RMCPKC.wbfs");
+      // the built game keeps the disc's region: RMCPKC, RMCEKC, RMCJKC or RMCKKC (USB loaders match folder and file to it)
+      var id = "RMCPKC";
+      try { var g = JsonDocument.Parse(File.ReadAllText(Path.Combine(GenDir, "stamp.json"))).RootElement.GetProperty("game").GetString(); if (g?.Length >= 4) id = g.Substring(0, 4) + "KC"; } catch { }
+      var dest = Path.Combine(root, "wbfs", $"Kartaclysm [{id}]", id + ".wbfs");
       if (MessageBox.Show(this, $"Copy Kartaclysm (about {new FileInfo(GameImage).Length >> 30} GB) to\n{dest} ?", "Copy to USB / SD", MessageBoxButtons.YesNo) != DialogResult.Yes) return;
       Directory.CreateDirectory(Path.GetDirectoryName(dest));
       SetStatus("Copying the game file...");
@@ -157,8 +170,9 @@ public partial class MainForm {
     try {
       if (!EnsurePaths()) { SetStatus("Setup cancelled"); return; }
       var m = await UpdateAndPrepare();
-      // Wiimmfi needs Dolphin's Wii certificates: guide the player once (offline play still works without them)
-      if (!HasWiiCerts() && !s.CertGuideShown) { s.CertGuideShown = true; s.Save(); if (!ShowCertGuide(true)) { SetStatus("Online setup: finish it in Dolphin, then press PLAY"); return; } }
+      // Wiimmfi needs Dolphin's Wii certificates: guide the player once (offline play still works without them).
+      // Kartaclysm's own server signs in over plain HTTP, so it needs no certificates.
+      if (!OwnServer && !HasWiiCerts() && !s.CertGuideShown) { s.CertGuideShown = true; s.Save(); if (!ShowCertGuide(true)) { SetStatus("Online setup: finish it in Dolphin, then press PLAY"); return; } }
       Launch(m);
     } catch (Exception ex) { SetStatus("Setup failed - see the message"); showBar = false; MessageBox.Show(this, ex.Message, "Kartaclysm"); }
     finally { busy = false; Invalidate(); }
@@ -185,12 +199,23 @@ public partial class MainForm {
   }
 
   // ---------------- launcher music (original Kartaclysm theme, CC0) ----------------
-  System.Media.SoundPlayer music;
+  System.Media.SoundPlayer music; int musicVolume = -1;
   void UpdateMusic() {
     try {
-      if (s.Music && fixedTime == null) { if (music == null) { music = new System.Media.SoundPlayer(GetType().Assembly.GetManifestResourceStream("music.wav")); music.Load(); } music.PlayLooping(); }
+      if (s.Music && s.MusicVolume > 0 && fixedTime == null) {
+        if (music == null || musicVolume != s.MusicVolume) { music?.Stop(); music = new System.Media.SoundPlayer(new MemoryStream(MusicAtVolume(s.MusicVolume))); music.Load(); musicVolume = s.MusicVolume; }
+        music.PlayLooping();
+      }
       else music?.Stop();
     } catch { }
+  }
+  // SoundPlayer has no volume control, so the 16-bit PCM samples of music.wav are scaled before playing
+  byte[] MusicAtVolume(int percent) {
+    using var st = GetType().Assembly.GetManifestResourceStream("music.wav"); using var ms = new MemoryStream(); st.CopyTo(ms);
+    var b = ms.ToArray(); int p = 12;
+    while (p + 8 <= b.Length && !(b[p] == 'd' && b[p + 1] == 'a' && b[p + 2] == 't' && b[p + 3] == 'a')) p += 8 + BitConverter.ToInt32(b, p + 4);
+    for (int i = p + 8; i + 1 < b.Length; i += 2) { var v = (short)(BitConverter.ToInt16(b, i) * percent / 100); b[i] = (byte)v; b[i + 1] = (byte)(v >> 8); }
+    return b;
   }
   void StopMusicForGame() { try { music?.Stop(); } catch { } }
 

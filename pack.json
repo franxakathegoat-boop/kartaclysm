@@ -147,5 +147,6 @@
  ],
  "prepare": "build/prepare.ps1",
  "wiimmfi_region": 0,
+ "wfc_domain": "",
  "min_launcher": "1.5.0"
 }

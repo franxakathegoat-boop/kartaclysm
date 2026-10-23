@@ -145,11 +145,13 @@
   "cupname": "Inferno Cup",
   "name": "SNES Choco Island 1",
   "authors": "SpyKid",
-  "file": "szs/SNES_Choco_Island_1.szs",
   "prop": "T83",
   "music": "T83",
   "slot": 79,
-  "slotfile": "04f.szs"
+  "slotfile": "04f.szs",
+  "ct": 20418,
+  "ctname": null,
+  "sha1": null
  },
  {
   "cup": 4,
@@ -1313,11 +1315,13 @@
   "cupname": "Whiteout Cup",
   "name": "Wii U Animal Crossing",
   "authors": "ZPL",
-  "file": "szs/Wii_U_Animal_Crossing.szs",
   "prop": "T21",
   "music": "T21",
   "slot": 171,
-  "slotfile": "0ab.szs"
+  "slotfile": "0ab.szs",
+  "ct": 10676,
+  "ctname": null,
+  "sha1": null
  },
  {
   "cup": 27,
@@ -1512,11 +1516,13 @@
   "cupname": "Thunderhead Cup",
   "name": "Tour Madrid Drive",
   "authors": "FunkyRacer",
-  "file": "szs/Tour_Madrid_Drive.szs",
   "prop": "T42",
   "music": "T42",
   "slot": 188,
-  "slotfile": "0bc.szs"
+  "slotfile": "0bc.szs",
+  "ct": 18388,
+  "ctname": null,
+  "sha1": null
  },
  {
   "cup": 31,
