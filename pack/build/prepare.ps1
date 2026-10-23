@@ -89,9 +89,11 @@ if ($need.Count) {
   if ($need.Count) {
     Say 30 "Downloading $($need.Count) tracks from Wiimm's CT archive"
     $e = [Fetch]::All([string[]]($need | ForEach-Object { "https://ct.wiimm.de/d/$($_.ct)" }), [string[]]($need | ForEach-Object { "$cache\$($_.ct).wbz" }), 1)
-    if ($e) { throw "Track download failed: $e" }
+    # a track that still can't be downloaded gets a stand-in in step 4b instead of stopping the whole build
+    if ($e) { Write-Warning "Track download failed, using a stand-in for now: $e" }
   }
 }
+$ct = @($ct | Where-Object { Test-Path "$cache\$($_.ct).wbz" })
 $n = 0
 foreach ($t in $ct) {
   $n++; Say (40 + [int](42 * $n / $ct.Count)) "Building track $n/$($ct.Count): $($t.name)"
